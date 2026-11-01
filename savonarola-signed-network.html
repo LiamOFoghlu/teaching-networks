@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savonarola Signed Network</title>
+<style>
+:root{--bg:#ffffff;--text:#1f1e1b;--muted:#6b6a64;--border:rgba(0,0,0,.12);--chip:#f3f2ee;--pos:#1D9E75;--neg:#E24B4A;--pro-f:#E1F5EE;--pro-s:#0F6E56;--anti-f:#FCEBEB;--anti-s:#A32D2D;--split-f:#FAEEDA;--split-s:#854F0B;--foc-f:#1f1e1b;--hi:#EF9F27}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1a;--text:#ecebe6;--muted:#a3a29b;--border:rgba(255,255,255,.14);--chip:#2a2a27;--pro-f:#085041;--pro-s:#5DCAA5;--anti-f:#791F1F;--anti-s:#F09595;--split-f:#633806;--split-s:#EF9F27;--foc-f:#ecebe6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:24px 16px 32px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px}
+h2{font-size:16px;font-weight:500;margin:20px 0 6px}
+.sub{font-size:14px;color:var(--muted);margin:0 0 14px}
+.lg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px;align-items:center}
+.lg label,.lg span.k{display:flex;align-items:center;gap:6px}
+.lg label{cursor:pointer;user-select:none}
+.lg .sep{width:1px;height:16px;background:var(--border)}
+.wrap{overflow-x:auto}
+#net{display:block;width:100%;min-width:760px;height:auto}
+#net .e{transition:opacity .2s}
+#net .n{cursor:pointer;transition:opacity .2s}
+#net .n text{font-size:12px;fill:var(--text)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.stat{background:var(--chip);border-radius:8px;padding:10px 12px}
+.stat .l{font-size:12px;color:var(--muted)}
+.stat .v{font-size:20px;font-weight:500}
+#info{font-size:13px;color:var(--muted);line-height:1.6;min-height:60px;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
+#info b{font-weight:500;color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:12px;background:var(--chip);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:3px 10px;cursor:pointer}
+.chip.on{border-color:var(--hi);box-shadow:0 0 0 1px var(--hi)}
+.ctl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:13px;color:var(--muted);margin:4px 0 8px}
+.ctl input[type=range]{width:220px}
+.ctl select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px}
+#phaseLbl{color:var(--text);font-weight:500}
+.note{font-size:12px;color:var(--muted);margin-top:20px;border-top:1px solid var(--border);padding-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>Savonarola's Florence as a signed network</h1>
+<p class="sub">Collectives in Florence, 1494–1498, linked by positive ties (membership, kinship, alliance) and negative ties (hostility). Node colour shows stance towards the Friar. Move the slider to see how the network changes. Click a collective to see its ties, or click a triad below to highlight it.</p>
+<div class="lg">
+<span class="k"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--pos)" stroke-width="1.6" stroke-linecap="round"/></svg>Positive tie</span>
+<span class="k"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--neg)" stroke-width="1.6" stroke-dasharray="3 3" stroke-linecap="round"/></svg>Negative tie</span>
+<span class="sep"></span>
+<span class="k"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--pro-f)" stroke="var(--pro-s)"/></svg>Pro-Savonarola</span>
+<span class="k"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--anti-f)" stroke="var(--anti-s)"/></svg>Anti</span>
+<span class="k"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--split-f)" stroke="var(--split-s)"/></svg>Split or shifting</span>
+<span class="sep"></span>
+<label><input type="checkbox" id="incSav" checked style="margin:0">Include Savonarola</label>
+</div>
+<div class="ctl"><label>Period <input type="range" id="phase" min="0" max="4" step="1" value="0"></label><span id="phaseLbl"></span><span class="sep" style="width:1px;height:16px;background:var(--border)"></span><label>Size by <select id="size"><option value="none">Default</option><option value="deg">Degree</option><option value="pos">Positive ties</option><option value="neg">Negative ties</option><option value="btw">Betweenness</option><option value="clo">Closeness</option></select></label></div>
+<div class="wrap">
+<svg id="net" viewBox="0 0 1000 640" role="img" aria-labelledby="t d"><title id="t">Signed network of collectives in Savonarolan Florence</title><desc id="d">Families, factions, religious orders, social groups and foreign powers, linked by positive and negative ties, coloured by stance towards Savonarola.</desc>
+<g id="hl"></g><g id="edges"></g><g id="nodes"></g></svg>
+</div>
+<div id="info"></div>
+<h2>Structural balance</h2>
+<div class="stats" id="stats"></div>
+<div style="font-size:13px;color:var(--muted);margin:4px 0 8px">Unbalanced triads (an odd number of negative ties). Click to highlight; click again to clear.</div>
+<div class="chips" id="chips"></div>
+<p class="note">Coded from Lauro Martines, <i>Fire in the City: Savonarola and the Struggle for the Soul of Renaissance Florence</i> (2006). Martines does not tabulate guilds or quarters, so the collectives are those his narrative identifies: factions, leading families, religious orders, foreign powers and broad social groups. Families are coded by the members he names, so a split family can carry positive ties to both camps. A triad is balanced when the product of its three signs is positive ("the friend of my friend is my friend", "the enemy of my enemy is my friend"). Centrality treats the active ties as unsigned and undirected; betweenness is normalised to 0–1 and closeness is harmonic closeness. In the pooled view, a pair whose tie changed sign over time keeps its latest sign. The random baseline is the share of balanced triads expected if the same number of positive and negative ties were assigned at random: p³ + 3p(1 − p)².</p>
+</main>
+<script>
+const N={
+sav:[470,330,'Savonarola and San Marco','focal','The Friar and his Dominican convent'],
+frateschi:[240,330,'Frateschi (Piagnoni)','pro','The "Friar\'s men": loose aggregate of pious men and some opportunists'],
+valori:[330,205,'Valori','pro','Francesco Valori, possibly the most powerful politician of the Savonarolan years'],
+salviati:[235,150,'Salviati','pro','Jacopo Salviati, a Savonarolan leader; Giuliano Salviati Gonfalonier in early 1498'],
+council:[80,265,'Great Council men','pro','Petty merchants, down-at-heel nobles and prosperous artisans favouring a wide republic'],
+north:[75,410,'North of the Duomo','pro','The neighbourhoods where belief in the Friar persisted longest'],
+women:[150,515,'Patrician women','pro','Women of the patriciate turning to San Marco for moral guidance'],
+boys:[285,560,'The Friar\'s boys','pro','Reformed boys (fanciulli), mostly from eminent families'],
+intellectuals:[75,100,'Intellectuals and artists','pro','Pico, Poliziano, the Benivieni brothers, Botticelli, Filippino Lippi'],
+friarlymed:[400,120,'"Friarly" Mediceans','pro','Crypto-Mediceans who passed over to the Frateschi'],
+france:[195,40,'France (Charles VIII)','pro','The King whom Savonarola backed unswervingly'],
+pucci:[540,230,'Pucci','split','Giannozzo Pucci: Piero\'s boon companion, yet associated with the Savonarolan regime'],
+ridolfi:[575,140,'Ridolfi','split','Giovanbattista a Frateschi leader; his brother Niccolò a Medicean; Vincenzio killed Valori'],
+delnero:[640,285,'Del Nero',['split','split','split','split','pro'],'Bernardo the Friar\'s great enemy; Simone fined as a Fratesco'],
+tornabuoni:[690,200,'Tornabuoni','split','Lorenzo: Medici kinsman who endorsed a letter supporting the Friar'],
+soderini:[545,470,'Soderini','split','Brothers split three ways over the Friar, then closed ranks'],
+strozzi:[650,560,'Strozzi','split','Six Strozzi friars at San Marco; Alfonso Strozzi helped lead the siege'],
+lower:[455,600,'Poor and lower classes',['split','pro','pro','pro','anti'],'Once broadly behind the Friar; desperate after two years of famine'],
+medici:[790,110,'Exiled Medici (Piero)','anti','Piero de\' Medici and the main line, plotting a return'],
+bigi:[870,215,'Bigi (Greys)','anti','Obstinate Mediceans'],
+cadetmed:[950,165,'Medici cadet line','anti','Lorenzo and Giovanni di Pierfrancesco ("Popolani")'],
+arrabbiati:[775,330,'Arrabbiati','anti','The "Rabid": a loose, fluid grouping of the Friar\'s chief enemies'],
+whites:[690,410,'Whites','anti','Anti-Savonarolan republicans'],
+compagnacci:[830,455,'Compagnacci','anti','About 150 upper-class pleasure-lovers led by Doffo Spini'],
+rucellai:[905,300,'Rucellai','anti','Bernardo Rucellai, a leading Arrabbiato'],
+capponi:[940,385,'Capponi','anti','Piero Capponi, a top Arrabbiati leader'],
+vespucci:[915,470,'Vespucci','anti','Guidantonio Vespucci, a formidable jurist and Arrabbiati leader'],
+nerli:[905,560,'Nerli','anti','The Nerli men, among the Friar\'s noble tormentors in 1498'],
+pitti:[660,40,'Pitti','anti','Jacopo Pitti, one of Valori\'s killers'],
+pope:[455,40,'Papacy (Alexander VI)','anti','The Pope who excommunicated the Friar'],
+milan:[870,40,'Milan (Sforza)','anti','Ludovico Sforza, in the Holy League against France'],
+franciscans:[770,590,'Franciscans of Santa Croce','anti','Francesco da Puglia\'s challenge led to the ordeal by fire'],
+augustinians:[330,40,'Augustinians','anti','Mariano da Genazzano, the first critic to preach against him'],
+clergy:[560,595,'Parish clergy','anti','Priests who warned against keeping faith with the Friar']};
+const E=[
+['+','sav','frateschi','Followers who came to San Marco for confession, sermons and instruction',1,4],
+['+','sav','valori','"You do your part … and we shall do ours, the practical political part"',1,4],
+['+','sav','salviati','Giuliano Salviati\'s Signory commissions his treatise on government; Marcuccio Salviati guards the Dominicans at the ordeal',1,4],
+['+','sav','council','His zeal for the Great Council galvanised its supporters',1,4],
+['+','sav','france','His unswerving commitment to the King of France',1,4],
+['+','sav','north','Belief in him persisted in the neighbourhoods north of the cathedral',1,4],
+['+','sav','boys','His reformed boys',2,4],
+['+','sav','women','More and more patrician women turn to San Marco',1,4],
+['+','sav','intellectuals','Pico and Poliziano die in Dominican dress; Botticelli and Lippi drift to the Piagnoni',1,4],
+['+','sav','friarlymed','Mediceans who came over in gratitude for his campaign to pardon them',1,4],
+['+','sav','pucci','Pucci endorses the letter in the Friar\'s support',3,3],
+['+','sav','tornabuoni','Lorenzo Tornabuoni endorses the letter in his support; the Friar may have spoken for his life',3,3],
+['+','sav','strozzi','Six Strozzi friars in San Marco',1,4],
+['-','sav','pope','Excommunication (1497) and the Pope\'s demand for silence',1,4],
+['-','sav','franciscans','Francesco da Puglia challenges San Marco to the ordeal by fire',3,4],
+['-','sav','augustinians','Mariano da Genazzano preaches against him',1,4],
+['-','sav','arrabbiati','They want him exiled or murdered',1,4],
+['-','sav','compagnacci','Defined by their visceral hatred of the Friar',3,4],
+['-','sav','bigi','His attacks on tyranny block a Medicean restoration',1,4],
+['-','sav','medici','Seen as the chief obstacle to a Medicean dictatorship',1,4],
+['-','sav','whites','Republicans who rejected the Friar',1,4],
+['-','sav','milan','His enemies want to leave France for the Holy League',1,4],
+['-','sav','rucellai','Bernardo Rucellai, a leading Arrabbiato',1,4],
+['-','sav','capponi','Piero Capponi, a top Arrabbiati leader',1,2],
+['-','sav','vespucci','Guidantonio Vespucci, a top Arrabbiati leader',1,4],
+['-','sav','delnero','Bernardo del Nero, "Savonarola\'s great enemy"',1,3],
+['-','sav','nerli','The Nerli men insult "the Bigots" in 1498',4,4],
+['-','sav','cadetmed','Secret financial captains of the Compagnacci',3,4],
+['-','sav','clergy','Parish priests warn against going to San Marco',3,4],
+['-','sav','lower','Crowds turn on the Friar after the failed ordeal',4,4],
+['+','frateschi','valori','One of the three leaders of the Friar\'s men',1,4],
+['+','frateschi','soderini','Paolantonio Soderini, a Frateschi leader',1,4],
+['+','frateschi','ridolfi','Giovanbattista Ridolfi, a Frateschi leader',1,4],
+['+','frateschi','salviati','Jacopo Salviati, a Savonarolan leader',1,4],
+['+','frateschi','council','The current most strongly in favour of the Great Council',1,4],
+['+','frateschi','friarlymed','Crypto-Mediceans find their way into the Frateschi',1,4],
+['+','frateschi','delnero','Simone del Nero fined as a Fratesco in 1498',2,4],
+['-','frateschi','arrabbiati','Rival currents in the councils',1,4],
+['-','frateschi','compagnacci','Stones, filth and insults hurled at the pious marchers',3,4],
+['-','frateschi','lower','A hungry mob sacks Cambini\'s house and tries Ridolfi\'s and Soderini\'s',4,4],
+['+','arrabbiati','rucellai','Bernardo Rucellai, a leading Arrabbiato',1,4],
+['+','arrabbiati','capponi','Piero Capponi, a top leader',1,2],
+['+','arrabbiati','vespucci','Guidantonio Vespucci, a top leader',1,4],
+['+','arrabbiati','soderini','Giovan Vettorio Soderini drifts toward the Friar\'s enemies',1,4],
+['+','arrabbiati','strozzi','Alfonso Strozzi helps direct the siege of San Marco',4,4],
+['+','arrabbiati','compagnacci','Joint control of the streets in April 1498',3,4],
+['+','arrabbiati','pope','The Pope and the Arrabbiati hound the Frateschi',3,4],
+['+','arrabbiati','franciscans','Press Francesco da Puglia to find a substitute for the ordeal',4,4],
+['+','arrabbiati','whites','Allies only in opposition',1,4],
+['+','compagnacci','franciscans','Press Francesco da Puglia to find a substitute for the ordeal',4,4],
+['+','compagnacci','cadetmed','Financed in secret by the cadet Medici brothers',3,4],
+['+','compagnacci','nerli','The Nerli men and Doffo Spini torment the pious together',4,4],
+['+','compagnacci','soderini','Tommaso Soderini joins, encouraged by his Fratesco father',4,4],
+['+','compagnacci','lower','Pay or encourage poor children to stone Savonarolan processions',4,4],
+['-','compagnacci','boys','Snatch candles and crosses from the boys\' processions',3,4],
+['+','bigi','medici','Obstinate Mediceans',1,4],
+['+','bigi','friarlymed','Shared Medicean loyalties',1,4],
+['+','medici','delnero','Bernardo del Nero executed (1497) for the plot to restore Piero',1,3],
+['+','medici','tornabuoni','Lorenzo Tornabuoni: Medici kinsman and bank partner, executed 1497',1,3],
+['+','medici','pucci','Giannozzo Pucci, Piero\'s boon companion, executed 1497',1,3],
+['+','medici','ridolfi','Niccolò Ridolfi, father-in-law to Lorenzo\'s daughter, executed 1497',1,3],
+['+','medici','salviati','Jacopo Salviati tied to the Medici by marriage',1,4],
+['+','medici','augustinians','Mariano put up to it by Lorenzo or Medicean oligarchs',1,4],
+['-','medici','nerli','Nerli on Piero\'s list of houses to eliminate; Jacopo de\' Nerli helped topple him',1,4],
+['-','medici','valori','Valori on Piero\'s list of houses to eliminate',1,4],
+['-','medici','cadetmed','The "Popolani" line, rivals of Piero',1,4],
+['+','whites','council','Cherished the Great Council while rejecting the Friar',1,4],
+['+','rucellai','france','Backs King Charles, fearing Milan would bring back the Medici',1,4],
+['-','rucellai','milan','Distrusts reliance on the Duke',1,4],
+['+','capponi','milan','Ready to desert France for the Italian League and Sforza',1,2],
+['+','vespucci','milan','Ready to desert France for the Italian League and Sforza',1,4],
+['+','cadetmed','milan','Strong ties with Milan; one brother married a Sforza princess',1,4],
+['+','pope','milan','Partners in the Holy League',1,4],
+['-','pope','france','The Holy League against Charles VIII',1,4],
+['-','france','milan','Enemies after 1495',1,4],
+['+','pope','clergy','Priests echo the threats from Rome',3,4],
+['-','valori','capponi','Fierce rivals, each pulling for his own friends',1,2],
+['-','valori','delnero','Valori "determined to get rid of Bernardo del Nero"',1,3],
+['-','valori','ridolfi','Feud after Niccolò Ridolfi\'s execution (1497); Vincenzio Ridolfi splits Valori\'s head open (April 1498)',3,4],
+['-','valori','pitti','Jacopo Pitti joins in Valori\'s murder',4,4],
+['+','pitti','ridolfi','Valori\'s killers, never arrested',4,4],
+['-','capponi','soderini','Capponi keeps Paolantonio Soderini off the Twenty',1,2],
+['+','boys','salviati','The leading boys came from families like the Salviati',2,4],
+['-','boys','lower','Lower-class boys stone the pious processions',4,4],
+['+','sav','lower','Ever since 1495, the Friar enjoyed the backing of the greater part of the population',1,3]];
+const ns='http://www.w3.org/2000/svg',S={pro:['--pro-f','--pro-s'],anti:['--anti-f','--anti-s'],split:['--split-f','--split-s'],focal:['--foc-f','--foc-f']};
+const PH=['All years pooled, 1494–1498','1494–95: the new republic','1496: factions harden','1497: excommunication and executions','1498: ordeal, siege and fall'];
+const SZ={none:'Default',deg:'Degree',pos:'Positive ties',neg:'Negative ties',btw:'Betweenness',clo:'Closeness'};
+const st={sel:null,tri:null,inc:true,ph:0,mode:'none'};
+const key=(a,b)=>a<b?a+'|'+b:b+'|'+a;
+const stance=(id)=>{const v=N[id][3];return Array.isArray(v)?v[st.ph]:v};
+const eg=document.getElementById('edges'),ng=document.getElementById('nodes');
+const nodeEls={};const pc={};
+E.forEach(e=>{const k=key(e[1],e[2]);pc[k]=(pc[k]||0)+1;e.k=k;e.i=pc[k];const p=document.createElementNS(ns,'path');
+p.setAttribute('fill','none');p.setAttribute('stroke',e[0]==='+'?'var(--pos)':'var(--neg)');p.setAttribute('stroke-linecap','round');
+if(e[0]==='-')p.setAttribute('stroke-dasharray','3 3');p.setAttribute('class','e');
+const ti=document.createElementNS(ns,'title');ti.textContent=(e[0]==='+'?'(+) ':'(−) ')+N[e[1]][2]+' — '+N[e[2]][2]+': '+e[3];p.appendChild(ti);eg.appendChild(p);e.el=p});
+Object.entries(N).forEach(([id,[x,y,lab]])=>{const g=document.createElementNS(ns,'g');g.setAttribute('class','n');
+const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('stroke-width','1.5');g.appendChild(c);
+const t=document.createElementNS(ns,'text');let a='middle',tx=x;if(x>900){a='end';tx=x+10}if(x<100){a='start';tx=x-10}
+t.setAttribute('x',tx);t.setAttribute('text-anchor',a);t.textContent=lab;g.appendChild(t);
+g.onclick=()=>{st.sel=st.sel===id?null:id;st.tri=null;draw()};ng.appendChild(g);nodeEls[id]={g,c,t,x,y}});
+function activeEdges(){let A=E.filter(e=>st.inc||(e[1]!=='sav'&&e[2]!=='sav'));
+if(st.ph>0)return A.filter(e=>e[4]<=st.ph&&st.ph<=e[5]);
+const latest={};A.forEach(e=>{if(!latest[e.k]||e[5]>latest[e.k][5])latest[e.k]=e});return Object.values(latest)}
+function cent(A,ids){const nb={};ids.forEach(i=>nb[i]=new Set());const pos={},neg={};ids.forEach(i=>{pos[i]=0;neg[i]=0});
+A.forEach(e=>{nb[e[1]].add(e[2]);nb[e[2]].add(e[1]);if(e[0]==='+'){pos[e[1]]++;pos[e[2]]++}else{neg[e[1]]++;neg[e[2]]++}});
+const n=ids.length,deg={},btw={},clo={};ids.forEach(i=>{deg[i]=nb[i].size;btw[i]=0;clo[i]=0});
+ids.forEach(s=>{const Sk=[],P={},sig={},d={};ids.forEach(v=>{P[v]=[];sig[v]=0;d[v]=-1});sig[s]=1;d[s]=0;const Q=[s];let h=0;
+while(h<Q.length){const v=Q[h++];Sk.push(v);nb[v].forEach(w=>{if(d[w]<0){d[w]=d[v]+1;Q.push(w)}if(d[w]===d[v]+1){sig[w]+=sig[v];P[w].push(v)}})}
+let c=0;ids.forEach(t=>{if(t!==s&&d[t]>0)c+=1/d[t]});clo[s]=n>1?c/(n-1):0;
+const dl={};ids.forEach(v=>dl[v]=0);while(Sk.length){const w=Sk.pop();P[w].forEach(v=>{dl[v]+=sig[v]/sig[w]*(1+dl[w])});if(w!==s)btw[w]+=dl[w]}});
+ids.forEach(i=>btw[i]=n>2?btw[i]/((n-1)*(n-2)):0);return {deg,pos,neg,btw,clo}}
+const fmt=(k,v)=>['deg','pos','neg'].includes(k)?v:v.toFixed(2);
+function triads(A,ids){const sg={};A.forEach(e=>sg[e.k]=e[0]==='+'?1:-1);const out=[];
+for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const a=sg[key(ids[i],ids[j])];if(!a)continue;
+for(let k=j+1;k<ids.length;k++){const b=sg[key(ids[i],ids[k])],c=sg[key(ids[j],ids[k])];if(b&&c)out.push({n:[ids[i],ids[j],ids[k]],bal:a*b*c>0})}}return out}
+const sgn=e=>`<span style="color:${e[0]==='+'?'var(--pos)':'var(--neg)'}">${e[0]==='+'?'+':'−'}</span>`;
+function draw(){document.getElementById('phaseLbl').textContent=PH[st.ph];
+const A=activeEdges(),live=new Set();A.forEach(e=>{live.add(e[1]);live.add(e[2])});
+const ids=Object.keys(N).filter(i=>live.has(i));if(st.sel&&!live.has(st.sel))st.sel=null;
+const C=cent(A,ids),T=triads(A,ids),Aset=new Set(A);const s=st.sel,tri=st.tri?new Set(st.tri):null;
+const R={};Object.keys(N).forEach(id=>{let r=id==='sav'?13:8;if(st.mode!=='none'&&live.has(id)){const v=C[st.mode],M=Math.max(...ids.map(i=>v[i]));r=M>0?4+12*Math.sqrt(v[id]/M):4}R[id]=r});
+const nb=new Set();if(s)A.forEach(e=>{if(e[1]===s||e[2]===s){nb.add(e[1]);nb.add(e[2])}});
+Object.entries(nodeEls).forEach(([id,n])=>{const stc=stance(id);n.c.setAttribute('r',R[id].toFixed(1));n.c.setAttribute('fill',`var(${S[stc][0]})`);n.c.setAttribute('stroke',`var(${S[stc][1]})`);
+n.t.setAttribute('y',(n.y+R[id]+13).toFixed(1));const hide=!st.inc&&id==='sav';n.g.style.display=hide?'none':'';
+let on=live.has(id);if(on&&tri)on=tri.has(id);else if(on&&s)on=nb.has(id)||id===s;n.g.style.opacity=on?1:(live.has(id)?0.18:0.1)});
+E.forEach(e=>{const vis=Aset.has(e);e.el.style.display=vis?'':'none';if(!vis)return;
+const a=nodeEls[e[1]],b=nodeEls[e[2]];const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy),off=L*0.06*(e.i===1?1:-1);const mx=(a.x+b.x)/2-dy/L*off,my=(a.y+b.y)/2+dx/L*off;
+e.el.setAttribute('d',`M${a.x} ${a.y}Q${mx.toFixed(1)} ${my.toFixed(1)} ${b.x} ${b.y}`);
+let on=true;if(tri)on=tri.has(e[1])&&tri.has(e[2]);else if(s)on=e[1]===s||e[2]===s;e.el.style.opacity=on?1:0.06;e.el.setAttribute('stroke-width',tri&&on?'3':'1.3')});
+const pos=A.filter(e=>e[0]==='+').length,p=A.length?pos/A.length:0,exp=p**3+3*p*(1-p)**2,bal=T.filter(t=>t.bal).length;
+document.getElementById('stats').innerHTML=[['Collectives',ids.length],['Ties',`${A.length} (${pos}+ / ${A.length-pos}−)`],['Closed triads',T.length],['Balanced',T.length?`${bal} (${Math.round(100*bal/T.length)}%)`:'–'],['Random baseline',A.length?`${Math.round(100*exp)}%`:'–']].map(([l,v])=>`<div class="stat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+const ub=T.filter(t=>!t.bal),ch=document.getElementById('chips');ch.innerHTML='';
+if(st.tri&&!ub.some(t=>t.n.every(x=>st.tri.includes(x))))st.tri=null;
+ub.forEach(t=>{const b=document.createElement('button');b.className='chip'+(st.tri&&t.n.every(x=>st.tri.includes(x))?' on':'');b.textContent=t.n.map(i=>N[i][2]).join(' · ');
+b.onclick=()=>{const same=st.tri&&t.n.every(x=>st.tri.includes(x));st.tri=same?null:t.n;st.sel=null;draw()};ch.appendChild(b)});
+if(!ub.length)ch.innerHTML='<span style="font-size:13px;color:var(--muted)">None in this period.</span>';
+const info=document.getElementById('info');
+if(st.tri){const t=st.tri;const rows=[[t[0],t[1]],[t[0],t[2]],[t[1],t[2]]].map(([a,b])=>{const e=A.find(e=>e.k===key(a,b));return `${sgn(e)} ${N[a][2]} — ${N[b][2]}: ${e[3]}`});
+info.innerHTML=`<b>Unbalanced triad</b><br>${rows.join('<br>')}`;return}
+if(!s){if(st.mode==='none'){info.innerHTML='Select a collective to see its ties. Hover over a line to read the relationship.'}else{const v=C[st.mode];const top=ids.slice().sort((a,b)=>v[b]-v[a]).slice(0,6);info.innerHTML=`<b>Highest ${SZ[st.mode].toLowerCase()}</b>: `+top.map(i=>`${N[i][2]} (${fmt(st.mode,v[i])})`).join(', ')}return}
+const n=N[s];const mine=T.filter(t=>t.n.includes(s)),mb=mine.filter(t=>t.bal).length;
+const rows=A.filter(e=>e[1]===s||e[2]===s).map(e=>{const o=e[1]===s?e[2]:e[1];return `${sgn(e)} ${N[o][2]}: ${e[3]}`});
+info.innerHTML=`<b>${n[2]}</b> — ${n[4]}.<br>Degree ${C.deg[s]} (${C.pos[s]}+ / ${C.neg[s]}−) · Betweenness ${C.btw[s].toFixed(2)} · Closeness ${C.clo[s].toFixed(2)} · In ${mine.length} triads, ${mb} balanced<br>${rows.join('<br>')}`}
+document.getElementById('incSav').onchange=e=>{st.inc=e.target.checked;st.tri=null;if(st.sel==='sav')st.sel=null;draw()};
+document.getElementById('phase').oninput=e=>{st.ph=+e.target.value;draw()};
+document.getElementById('size').onchange=e=>{st.mode=e.target.value;draw()};
+draw();
+</script>
+</body>
+</html>
