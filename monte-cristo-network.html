@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monte Cristo Network</title>
+<style>
+:root{--bg:#ffffff;--text:#1f1e1b;--muted:#6b6a64;--border:rgba(0,0,0,.12);--node-fill:#1f1e1b;--minor-fill:#ffffff}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1a;--text:#ecebe6;--muted:#a3a29b;--border:rgba(255,255,255,.14);--node-fill:#ecebe6;--minor-fill:#1c1c1a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:24px 16px 32px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px}
+.sub{font-size:14px;color:var(--muted);margin:0 0 16px}
+.lg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px;align-items:center}
+.lg label{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.lg svg{flex:none}
+.lg .sep{width:1px;height:16px;background:var(--border)}
+.wrap{overflow-x:auto}
+#net{display:block;width:100%;min-width:760px;height:auto}
+#net .e{transition:opacity .2s}
+#net .n{cursor:pointer;transition:opacity .2s}
+#net .n text{font-size:12px;fill:var(--text)}
+#net .n text.role{font-size:11px;fill:var(--muted)}
+#info{font-size:13px;color:var(--muted);line-height:1.6;min-height:72px;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
+#info b{font-weight:500;color:var(--text)}
+.note{font-size:12px;color:var(--muted);margin-top:20px;border-top:1px solid var(--border);padding-top:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>The Count of Monte Cristo: a network of characters</h1>
+<p class="sub">Kinship, marriage and love, harm, help, and Monte Cristo's revenge. Rows are roughly generations. Click a character to isolate their ties; use the legend to filter. Contains spoilers.</p>
+<div class="lg" id="lg"></div>
+<div class="wrap">
+<svg id="net" viewBox="0 40 1060 540" role="img" aria-labelledby="t d"><title id="t">Character network of The Count of Monte Cristo</title><desc id="d">Characters arranged by generation and family, linked by kinship, marriage and love, harm, help, and revenge.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<g id="edges"></g><g id="nodes"></g></svg>
+</div>
+<div id="info"></div>
+<p class="note">Hover over a line to read the relationship. Tick "Size by degree" to scale each character by their number of ties under the current filters.</p>
+</main>
+<script>
+const T={
+kin:{c:'#7F77DD',w:1.4,d:'',n:'Kinship',dir:1},
+love:{c:'#D4537E',w:1.8,d:'',n:'Marriage and love',dir:0},
+harm:{c:'#E24B4A',w:1.6,d:'2 4',n:'Harm and betrayal',dir:1},
+help:{c:'#1D9E75',w:1.4,d:'6 4',n:'Help and service',dir:1},
+revenge:{c:'#EF9F27',w:2.6,d:'',n:'Monte Cristo\'s revenge',dir:1}};
+const N={
+msm:[80,70,'M. de Saint-Méran','Royalist aristocrat'],
+mmesm:[220,70,'Mme de Saint-Méran','Royalist aristocrat'],
+noirtier:[345,70,'Noirtier','Bonapartist; Villefort\'s father'],
+faria:[690,70,'Abbé Faria','Fellow prisoner at the Château d\'If'],
+louis:[845,70,'Louis Dantès','Edmond\'s father; dies destitute'],
+general:[50,250,'Gen. de Quesnel','Royalist general; Franz\'s father'],
+renee:[135,295,'Renée','Villefort\'s first wife'],
+villefort:[220,250,'Villefort','Crown prosecutor'],
+heloise:[305,295,'Héloïse','Villefort\'s second wife; the poisoner'],
+bertuccio:[390,250,'Bertuccio','Corsican; Monte Cristo\'s steward'],
+debray:[470,295,'Debray','Secretary at the Ministry of the Interior'],
+mmed:[550,250,'Mme Danglars','Wife of the banker'],
+danglars:[630,295,'Danglars','Banker, later baron'],
+ali:[705,250,'Ali Pasha','Ruler of Janina'],
+pierre:[780,295,'Pierre Morrel','Shipowner, Edmond\'s employer'],
+edmond:[860,250,'Edmond Dantès','Count of Monte Cristo; also Abbé Busoni, Lord Wilmore, Sinbad the Sailor',1],
+mercedes:[940,295,'Mercédès','Countess de Morcerf'],
+fernand:[1010,250,'Fernand','Count de Morcerf; shoots himself after exposure'],
+franz:[50,470,'Franz d\'Épinay','Baron; friend of Albert'],
+valentine:[140,515,'Valentine','Villefort\'s daughter'],
+edouard:[230,470,'Édouard','Villefort\'s son'],
+benedetto:[330,515,'Benedetto','Alias "Andrea Cavalcanti"; murderer'],
+eugenie:[455,470,'Eugénie','Danglars\'s daughter'],
+louise:[545,515,'Louise d\'Armilly','Eugénie\'s music teacher'],
+haydee:[630,470,'Haydée','Daughter of Ali Pasha'],
+maximilien:[720,515,'Maximilien','Captain of the Spahis'],
+julie:[805,470,'Julie','Morrel\'s daughter'],
+emmanuel:[885,515,'Emmanuel','Herbault; Julie\'s husband'],
+albert:[975,470,'Albert','Viscount de Morcerf']};
+const E=[
+['kin','msm','renee','M. de Saint-Méran is Renée\'s father'],
+['kin','mmesm','renee','Mme de Saint-Méran is Renée\'s mother'],
+['kin','noirtier','villefort','Noirtier is Villefort\'s father'],
+['kin','renee','valentine','Renée is Valentine\'s mother'],
+['kin','villefort','valentine','Villefort is Valentine\'s father'],
+['kin','villefort','edouard','Villefort is Édouard\'s father'],
+['kin','heloise','edouard','Héloïse is Édouard\'s mother'],
+['kin','villefort','benedetto','Villefort is Benedetto\'s secret father'],
+['kin','mmed','benedetto','Mme Danglars is Benedetto\'s secret mother'],
+['kin','general','franz','General de Quesnel is Franz\'s father'],
+['kin','danglars','eugenie','Danglars is Eugénie\'s father'],
+['kin','mmed','eugenie','Mme Danglars is Eugénie\'s mother'],
+['kin','ali','haydee','Ali Pasha is Haydée\'s father'],
+['kin','pierre','maximilien','Pierre Morrel is Maximilien\'s father'],
+['kin','pierre','julie','Pierre Morrel is Julie\'s father'],
+['kin','louis','edmond','Louis Dantès is Edmond\'s father'],
+['kin','fernand','albert','Fernand is Albert\'s father'],
+['kin','mercedes','albert','Mercédès is Albert\'s mother'],
+['love','msm','mmesm','Married'],
+['love','renee','villefort','Married; Renée is Villefort\'s first wife'],
+['love','villefort','heloise','Married; Héloïse is Villefort\'s second wife'],
+['love','danglars','mmed','Married'],
+['love','julie','emmanuel','Married'],
+['love','fernand','mercedes','Married; they are also cousins'],
+['love','edmond','mercedes','Engaged before Edmond\'s arrest'],
+['love','villefort','mmed','Former lovers; their child is Benedetto'],
+['love','debray','mmed','Lovers and partners in financial speculation'],
+['love','franz','valentine','Arranged engagement, broken off'],
+['love','maximilien','valentine','In love; united at the end'],
+['love','benedetto','eugenie','Engaged while posing as Andrea Cavalcanti'],
+['love','albert','eugenie','Originally betrothed'],
+['love','eugenie','louise','Elope together'],
+['love','haydee','edmond','Haydée loves Monte Cristo; they leave together'],
+['harm','danglars','edmond','Danglars writes the anonymous denunciation'],
+['harm','fernand','edmond','Fernand posts the denunciation'],
+['harm','villefort','edmond','Villefort buries him in the Château d\'If to protect Noirtier'],
+['harm','heloise','msm','Héloïse poisons M. de Saint-Méran (1st)'],
+['harm','heloise','mmesm','Héloïse poisons Mme de Saint-Méran (2nd)'],
+['harm','heloise','noirtier','Héloïse tries to poison Noirtier; his servant Barrois dies (3rd)'],
+['harm','heloise','valentine','Héloïse tries to poison Valentine (4th)'],
+['harm','heloise','edouard','Héloïse poisons Édouard, then herself (5th and 6th)'],
+['harm','noirtier','general','Noirtier kills General de Quesnel in a duel'],
+['harm','bertuccio','villefort','Bertuccio\'s vendetta: he stabs Villefort'],
+['harm','villefort','benedetto','Villefort buries his newborn son alive'],
+['harm','fernand','ali','Fernand betrays Ali Pasha, causing his death'],
+['harm','fernand','haydee','Fernand sells Haydée into slavery'],
+['harm','albert','edmond','Albert challenges Monte Cristo to a duel'],
+['revenge','edmond','fernand','Exposes his betrayal of Ali Pasha through Haydée\'s testimony'],
+['revenge','edmond','danglars','Ruins him financially'],
+['revenge','edmond','villefort','Exposes him in court through Benedetto'],
+['help','faria','edmond','Faria educates Edmond and reveals the treasure'],
+['help','pierre','edmond','Morrel, his employer, petitions for his release'],
+['help','edmond','pierre','Monte Cristo saves Morrel from ruin and suicide'],
+['help','bertuccio','benedetto','Bertuccio raises him with his sister-in-law Assunta'],
+['help','bertuccio','edmond','Bertuccio serves as Monte Cristo\'s steward'],
+['help','edmond','haydee','Monte Cristo buys Haydée out of slavery'],
+['help','edmond','valentine','Monte Cristo saves Valentine by staging her death'],
+['help','edmond','albert','Monte Cristo rescues Albert from Vampa\'s bandits'],
+['help','edmond','maximilien','Monte Cristo leaves him and Valentine his fortune']];
+const ns='http://www.w3.org/2000/svg',on={},sel={v:null},opt={deg:false};
+Object.keys(T).forEach(k=>on[k]=true);
+const lg=document.getElementById('lg');
+Object.entries(T).forEach(([k,t])=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" checked style="margin:0"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${t.c}" stroke-width="${t.w}" stroke-dasharray="${t.d}" stroke-linecap="round"/></svg>${t.n}`;l.querySelector('input').onchange=e=>{on[k]=e.target.checked;draw()};lg.appendChild(l)});
+lg.insertAdjacentHTML('beforeend','<span class="sep"></span>');
+const dl=document.createElement('label');dl.innerHTML='<input type="checkbox" style="margin:0">Size by degree';dl.querySelector('input').onchange=e=>{opt.deg=e.target.checked;draw()};lg.appendChild(dl);
+const eg=document.getElementById('edges'),ng=document.getElementById('nodes');
+const pc={};
+E.forEach(e=>{const key=[e[1],e[2]].sort().join();pc[key]=(pc[key]||0)+1;e.k=pc[key];const p=document.createElementNS(ns,'path');const t=T[e[0]];
+p.setAttribute('fill','none');p.setAttribute('stroke',t.c);p.setAttribute('stroke-width',t.w);p.setAttribute('stroke-linecap','round');
+if(t.d)p.setAttribute('stroke-dasharray',t.d);if(t.dir)p.setAttribute('marker-end','url(#arrow)');
+p.setAttribute('class','e');const ti=document.createElementNS(ns,'title');ti.textContent=e[3];p.appendChild(ti);eg.appendChild(p);e.el=p});
+const nodeEls={};
+Object.entries(N).forEach(([id,[x,y,lab,role,big]])=>{const g=document.createElementNS(ns,'g');g.setAttribute('class','n');
+const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('stroke','var(--text)');c.setAttribute('stroke-width','1');g.appendChild(c);
+const t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('text-anchor',x>1000?'end':x<60?'start':'middle');if(x>1000)t.setAttribute('x',x+8);if(x<60)t.setAttribute('x',x-8);t.textContent=lab;g.appendChild(t);
+g.onclick=()=>{sel.v=sel.v===id?null:id;draw()};ng.appendChild(g);nodeEls[id]={g,c,t,x,y,big}});
+function degrees(){const d={};Object.keys(N).forEach(k=>d[k]=0);E.forEach(e=>{if(on[e[0]]){d[e[1]]++;d[e[2]]++}});return d}
+function radius(id,d){const n=nodeEls[id];if(opt.deg)return 4+2.2*Math.sqrt(d[id]);return n.big?11:7}
+function draw(){const s=sel.v,d=degrees(),R={};Object.keys(N).forEach(id=>R[id]=radius(id,d));
+Object.entries(nodeEls).forEach(([id,n])=>{n.c.setAttribute('r',R[id].toFixed(1));n.c.setAttribute('fill',(opt.deg?d[id]>=8:n.big)?'var(--node-fill)':'var(--minor-fill)');n.t.setAttribute('y',(n.y+R[id]+14).toFixed(1))});
+const nb=new Set();
+E.forEach(e=>{const vis=on[e[0]];const hit=!s||e[1]===s||e[2]===s;if(vis&&hit&&s){nb.add(e[1]);nb.add(e[2])}
+const a=nodeEls[e[1]],b=nodeEls[e[2]];const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);const off=(e.k===1?0.12:-0.12)*L+(e.k===1?6:-6);
+const mx=(a.x+b.x)/2-dy/L*off,my=(a.y+b.y)/2+dx/L*off;const d1=Math.hypot(mx-a.x,my-a.y),d2=Math.hypot(b.x-mx,b.y-my);
+const r1=R[e[1]]+1,r2=R[e[2]]+(T[e[0]].dir?3:1);
+const sx=a.x+(mx-a.x)/d1*r1,sy=a.y+(my-a.y)/d1*r1,ex=b.x-(b.x-mx)/d2*r2,ey=b.y-(b.y-my)/d2*r2;
+e.el.setAttribute('d',`M${sx.toFixed(1)} ${sy.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+e.el.style.display=vis?'':'none';e.el.style.opacity=hit?(s?1:0.75):0.06});
+Object.entries(nodeEls).forEach(([id,n])=>{n.g.style.opacity=!s||nb.has(id)||id===s?1:0.2});
+const info=document.getElementById('info');
+if(!s){info.innerHTML='Select a character to see their ties. Filled circles mark the most connected characters.';return}
+const n=N[s];const rows=E.filter(e=>on[e[0]]&&(e[1]===s||e[2]===s)).map(e=>{const o=e[1]===s?e[2]:e[1];return `<span style="color:${T[e[0]].c}">●</span> ${N[o][2]}: ${e[3]}`});
+info.innerHTML=`<b>${n[2]}</b> — ${n[3]}. Degree: ${d[s]}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
+draw();
+</script>
+</body>
+</html>
