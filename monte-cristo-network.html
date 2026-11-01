@@ -15,6 +15,7 @@ h1{font-size:22px;font-weight:500;margin:0 0 4px}
 .lg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px;align-items:center}
 .lg label{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
 .lg svg{flex:none}
+.lg select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px}
 .lg .sep{width:1px;height:16px;background:var(--border)}
 .wrap{overflow-x:auto}
 #net{display:block;width:100%;min-width:760px;height:auto}
@@ -38,7 +39,7 @@ h1{font-size:22px;font-weight:500;margin:0 0 4px}
 <g id="edges"></g><g id="nodes"></g></svg>
 </div>
 <div id="info"></div>
-<p class="note">Hover over a line to read the relationship. Tick "Size by degree" to scale each character by their number of ties under the current filters.</p>
+<p class="note">Hover over a line to read the relationship. Centrality is computed on the ties currently shown, treating them as undirected and counting several ties between the same pair once. Betweenness is normalised to 0–1; closeness is harmonic closeness, which still works when hiding some tie types cuts a node off.</p>
 </main>
 <script>
 const T={
@@ -137,12 +138,26 @@ const E=[
 ['help','edmond','valentine','Monte Cristo saves Valentine by staging her death'],
 ['help','edmond','albert','Monte Cristo rescues Albert from Vampa\'s bandits'],
 ['help','edmond','maximilien','Monte Cristo leaves him and Valentine his fortune']];
-const ns='http://www.w3.org/2000/svg',on={},sel={v:null},opt={deg:false};
+const ns='http://www.w3.org/2000/svg',on={},sel={v:null},opt={mode:'none'};
 Object.keys(T).forEach(k=>on[k]=true);
+const SZ={none:'Default',deg:'Degree',btw:'Betweenness',clo:'Closeness'};
+function cent(){const ids=Object.keys(N),A={};ids.forEach(i=>A[i]=new Set());E.forEach(e=>{if(on[e[0]]&&e[1]!==e[2]){A[e[1]].add(e[2]);A[e[2]].add(e[1])}});
+const n=ids.length,deg={},btw={},clo={};ids.forEach(i=>{deg[i]=A[i].size;btw[i]=0;clo[i]=0});
+ids.forEach(s=>{const S=[],P={},sig={},d={};ids.forEach(v=>{P[v]=[];sig[v]=0;d[v]=-1});sig[s]=1;d[s]=0;const Q=[s];let h=0;
+while(h<Q.length){const v=Q[h++];S.push(v);A[v].forEach(w=>{if(d[w]<0){d[w]=d[v]+1;Q.push(w)}if(d[w]===d[v]+1){sig[w]+=sig[v];P[w].push(v)}})}
+let c=0;ids.forEach(t=>{if(t!==s&&d[t]>0)c+=1/d[t]});clo[s]=c/(n-1);
+const dl={};ids.forEach(v=>dl[v]=0);while(S.length){const w=S.pop();P[w].forEach(v=>{dl[v]+=sig[v]/sig[w]*(1+dl[w])});if(w!==s)btw[w]+=dl[w]}});
+ids.forEach(i=>btw[i]=btw[i]/((n-1)*(n-2)));return {deg,btw,clo}}
+const fmt=(k,v)=>k==='deg'?v:v.toFixed(2);
+function scaled(id,C,def){if(opt.mode==='none')return def;const v=C[opt.mode],M=Math.max(...Object.values(v));return M>0?4+11*Math.sqrt(v[id]/M):4}
+function isFilled(id,C,def){if(opt.mode==='none')return def;const v=C[opt.mode],M=Math.max(...Object.values(v));return M>0&&v[id]>=0.5*M}
+function topLine(C,name){const v=C[opt.mode];const top=Object.keys(N).sort((a,b)=>v[b]-v[a]).slice(0,5);return `<b>Highest ${SZ[opt.mode].toLowerCase()}</b>: `+top.map(i=>`${name(i)} (${fmt(opt.mode,v[i])})`).join(', ')}
+function metrics(C,s){return `Degree ${C.deg[s]} · Betweenness ${C.btw[s].toFixed(2)} · Closeness ${C.clo[s].toFixed(2)}`}
+
 const lg=document.getElementById('lg');
 Object.entries(T).forEach(([k,t])=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" checked style="margin:0"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${t.c}" stroke-width="${t.w}" stroke-dasharray="${t.d}" stroke-linecap="round"/></svg>${t.n}`;l.querySelector('input').onchange=e=>{on[k]=e.target.checked;draw()};lg.appendChild(l)});
 lg.insertAdjacentHTML('beforeend','<span class="sep"></span>');
-const dl=document.createElement('label');dl.innerHTML='<input type="checkbox" style="margin:0">Size by degree';dl.querySelector('input').onchange=e=>{opt.deg=e.target.checked;draw()};lg.appendChild(dl);
+const sl=document.createElement('label');sl.innerHTML='Size by <select>'+Object.entries(SZ).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')+'</select>';sl.querySelector('select').onchange=e=>{opt.mode=e.target.value;draw()};lg.appendChild(sl);
 const eg=document.getElementById('edges'),ng=document.getElementById('nodes');
 const pc={};
 E.forEach(e=>{const key=[e[1],e[2]].sort().join();pc[key]=(pc[key]||0)+1;e.k=pc[key];const p=document.createElementNS(ns,'path');const t=T[e[0]];
@@ -154,10 +169,8 @@ Object.entries(N).forEach(([id,[x,y,lab,role,big]])=>{const g=document.createEle
 const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('stroke','var(--text)');c.setAttribute('stroke-width','1');g.appendChild(c);
 const t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('text-anchor',x>1000?'end':x<60?'start':'middle');if(x>1000)t.setAttribute('x',x+8);if(x<60)t.setAttribute('x',x-8);t.textContent=lab;g.appendChild(t);
 g.onclick=()=>{sel.v=sel.v===id?null:id;draw()};ng.appendChild(g);nodeEls[id]={g,c,t,x,y,big}});
-function degrees(){const d={};Object.keys(N).forEach(k=>d[k]=0);E.forEach(e=>{if(on[e[0]]){d[e[1]]++;d[e[2]]++}});return d}
-function radius(id,d){const n=nodeEls[id];if(opt.deg)return 4+2.2*Math.sqrt(d[id]);return n.big?11:7}
-function draw(){const s=sel.v,d=degrees(),R={};Object.keys(N).forEach(id=>R[id]=radius(id,d));
-Object.entries(nodeEls).forEach(([id,n])=>{n.c.setAttribute('r',R[id].toFixed(1));n.c.setAttribute('fill',(opt.deg?d[id]>=8:n.big)?'var(--node-fill)':'var(--minor-fill)');n.t.setAttribute('y',(n.y+R[id]+14).toFixed(1))});
+function draw(){const s=sel.v,C=cent(),R={};Object.keys(N).forEach(id=>R[id]=scaled(id,C,nodeEls[id].big?11:7));
+Object.entries(nodeEls).forEach(([id,n])=>{n.c.setAttribute('r',R[id].toFixed(1));n.c.setAttribute('fill',isFilled(id,C,n.big)?'var(--node-fill)':'var(--minor-fill)');n.t.setAttribute('y',(n.y+R[id]+14).toFixed(1))});
 const nb=new Set();
 E.forEach(e=>{const vis=on[e[0]];const hit=!s||e[1]===s||e[2]===s;if(vis&&hit&&s){nb.add(e[1]);nb.add(e[2])}
 const a=nodeEls[e[1]],b=nodeEls[e[2]];const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);const off=(e.k===1?0.12:-0.12)*L+(e.k===1?6:-6);
@@ -168,9 +181,9 @@ e.el.setAttribute('d',`M${sx.toFixed(1)} ${sy.toFixed(1)}Q${mx.toFixed(1)} ${my.
 e.el.style.display=vis?'':'none';e.el.style.opacity=hit?(s?1:0.75):0.06});
 Object.entries(nodeEls).forEach(([id,n])=>{n.g.style.opacity=!s||nb.has(id)||id===s?1:0.2});
 const info=document.getElementById('info');
-if(!s){info.innerHTML='Select a character to see their ties. Filled circles mark the most connected characters.';return}
+if(!s){info.innerHTML=opt.mode==='none'?'Select a character to see their ties. Use "Size by" to scale characters by a centrality measure.':topLine(C,i=>N[i][2]);return}
 const n=N[s];const rows=E.filter(e=>on[e[0]]&&(e[1]===s||e[2]===s)).map(e=>{const o=e[1]===s?e[2]:e[1];return `<span style="color:${T[e[0]].c}">●</span> ${N[o][2]}: ${e[3]}`});
-info.innerHTML=`<b>${n[2]}</b> — ${n[3]}. Degree: ${d[s]}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
+info.innerHTML=`<b>${n[2]}</b> — ${n[3]}. ${metrics(C,s)}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
 draw();
 </script>
 </body>

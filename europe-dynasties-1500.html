@@ -12,9 +12,11 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-appl
 main{max-width:760px;margin:0 auto;padding:24px 16px 32px}
 h1{font-size:22px;font-weight:500;margin:0 0 4px}
 .sub{font-size:14px;color:var(--muted);margin:0 0 16px}
-.lg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px}
+.lg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px;align-items:center}
 .lg label{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
 .lg svg{flex:none}
+.lg select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px}
+.lg .sep{width:1px;height:16px;background:var(--border)}
 #net{display:block;width:100%;height:auto}
 #net .e{transition:opacity .2s}
 #net .n{cursor:pointer}
@@ -34,7 +36,7 @@ h1{font-size:22px;font-weight:500;margin:0 0 4px}
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <g id="edges"></g><g id="nodes"></g></svg>
 <div id="info"></div>
-<p class="note">Snapshot spans roughly 1494–1502, so a few ties (e.g. Margaret Tudor's and Lucrezia Borgia's marriages) fall just after 1500. Positions are approximate. Ties between states are in practice ties between ruling houses; many smaller polities are omitted.</p>
+<p class="note">Snapshot spans roughly 1494–1502, so a few ties (e.g. Margaret Tudor's and Lucrezia Borgia's marriages) fall just after 1500. Positions are approximate. Ties between states are in practice ties between ruling houses; many smaller polities are omitted. Centrality is computed on the ties currently shown, treating them as undirected and counting several ties between the same pair once. Betweenness is normalised to 0–1; closeness is harmonic closeness, which still works when hiding some tie types cuts a node off.</p>
 </main>
 <script>
 const T={union:{c:'#7F77DD',w:2.6,d:'',n:'Same dynasty / union'},marriage:{c:'#D4537E',w:1.6,d:'',n:'Dynastic marriage'},alliance:{c:'#1D9E75',w:1.4,d:'6 4',n:'Alliance / pact'},vassal:{c:'#888780',w:1.2,d:'4 3',n:'Vassal or tributary → overlord'}};
@@ -104,37 +106,56 @@ const E=[
 ['vassal','ferrara','papal','Ferrara held from the pope'],
 ['vassal','milan','hre','Imperial fief; ducal title from Maximilian 1495'],
 ['vassal','savoy','hre','Imperial principality']];
-const ns='http://www.w3.org/2000/svg',on={},sel={v:null};
+const ns='http://www.w3.org/2000/svg',on={},sel={v:null},opt={mode:'none'};
 Object.keys(T).forEach(k=>on[k]=true);
+const SZ={none:'Default',deg:'Degree',btw:'Betweenness',clo:'Closeness'};
+function cent(){const ids=Object.keys(N),A={};ids.forEach(i=>A[i]=new Set());E.forEach(e=>{if(on[e[0]]&&e[1]!==e[2]){A[e[1]].add(e[2]);A[e[2]].add(e[1])}});
+const n=ids.length,deg={},btw={},clo={};ids.forEach(i=>{deg[i]=A[i].size;btw[i]=0;clo[i]=0});
+ids.forEach(s=>{const S=[],P={},sig={},d={};ids.forEach(v=>{P[v]=[];sig[v]=0;d[v]=-1});sig[s]=1;d[s]=0;const Q=[s];let h=0;
+while(h<Q.length){const v=Q[h++];S.push(v);A[v].forEach(w=>{if(d[w]<0){d[w]=d[v]+1;Q.push(w)}if(d[w]===d[v]+1){sig[w]+=sig[v];P[w].push(v)}})}
+let c=0;ids.forEach(t=>{if(t!==s&&d[t]>0)c+=1/d[t]});clo[s]=c/(n-1);
+const dl={};ids.forEach(v=>dl[v]=0);while(S.length){const w=S.pop();P[w].forEach(v=>{dl[v]+=sig[v]/sig[w]*(1+dl[w])});if(w!==s)btw[w]+=dl[w]}});
+ids.forEach(i=>btw[i]=btw[i]/((n-1)*(n-2)));return {deg,btw,clo}}
+const fmt=(k,v)=>k==='deg'?v:v.toFixed(2);
+function scaled(id,C,def){if(opt.mode==='none')return def;const v=C[opt.mode],M=Math.max(...Object.values(v));return M>0?4+11*Math.sqrt(v[id]/M):4}
+function isFilled(id,C,def){if(opt.mode==='none')return def;const v=C[opt.mode],M=Math.max(...Object.values(v));return M>0&&v[id]>=0.5*M}
+function topLine(C,name){const v=C[opt.mode];const top=Object.keys(N).sort((a,b)=>v[b]-v[a]).slice(0,5);return `<b>Highest ${SZ[opt.mode].toLowerCase()}</b>: `+top.map(i=>`${name(i)} (${fmt(opt.mode,v[i])})`).join(', ')}
+function metrics(C,s){return `Degree ${C.deg[s]} · Betweenness ${C.btw[s].toFixed(2)} · Closeness ${C.clo[s].toFixed(2)}`}
+
 const lg=document.getElementById('lg');
 Object.entries(T).forEach(([k,t])=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" checked style="margin:0"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${t.c}" stroke-width="${t.w}" stroke-dasharray="${t.d}" stroke-linecap="round"/></svg>${t.n}`;l.querySelector('input').onchange=e=>{on[k]=e.target.checked;draw()};lg.appendChild(l)});
+lg.insertAdjacentHTML('beforeend','<span class="sep"></span>');
+const sl=document.createElement('label');sl.innerHTML='Size by <select>'+Object.entries(SZ).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')+'</select>';sl.querySelector('select').onchange=e=>{opt.mode=e.target.value;draw()};lg.appendChild(sl);
 const eg=document.getElementById('edges'),ng=document.getElementById('nodes');
 const pc={};
-E.forEach(e=>{const key=[e[1],e[2]].sort().join();pc[key]=(pc[key]||0)+1;e.k=pc[key];
-const [x1,y1]=N[e[1]],[x2,y2]=N[e[2]];const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy);const off=(e.k===1?8:-14);
-const mx=(x1+x2)/2-dy/L*off,my=(y1+y2)/2+dx/L*off;const r1=N[e[1]][4]?11:7,r2=N[e[2]][4]?11:7;
-const d1=Math.hypot(mx-x1,my-y1),d2=Math.hypot(x2-mx,y2-my);
-const sx=x1+(mx-x1)/d1*r1,sy=y1+(my-y1)/d1*r1,ex=x2-(x2-mx)/d2*(r2+2),ey=y2-(y2-my)/d2*(r2+2);
-const p=document.createElementNS(ns,'path');const t=T[e[0]];
-p.setAttribute('d',`M${sx.toFixed(1)} ${sy.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+E.forEach(e=>{const key=[e[1],e[2]].sort().join();pc[key]=(pc[key]||0)+1;e.k=pc[key];const p=document.createElementNS(ns,'path');const t=T[e[0]];
 p.setAttribute('fill','none');p.setAttribute('stroke',t.c);p.setAttribute('stroke-width',t.w);p.setAttribute('stroke-linecap','round');
 if(t.d)p.setAttribute('stroke-dasharray',t.d);if(e[0]==='vassal')p.setAttribute('marker-end','url(#arrow)');
 p.setAttribute('class','e');const ti=document.createElementNS(ns,'title');ti.textContent=e[3];p.appendChild(ti);eg.appendChild(p);e.el=p});
+const nodeEls={};
 Object.entries(N).forEach(([id,[x,y,lab,ruler,maj,pos]])=>{const g=document.createElementNS(ns,'g');g.setAttribute('class','n');
-const r=maj?10:6;g.innerHTML=`<circle cx="${x}" cy="${y}" r="${r}" fill="${maj?'var(--node-fill)':'var(--minor-fill)'}" stroke="var(--text)" stroke-width="1"/>`;
-const t=document.createElementNS(ns,'text');let tx=x,ty=y,a='middle';
-if(pos==='r'){tx=x+r+5;ty=y+4;a='start'}else if(pos==='l'){tx=x-r-5;ty=y+4;a='end'}else if(pos==='t'){ty=y-r-6}else{ty=y+r+14}
-if(tx>600&&a==='middle'){a='end';tx=x+r}
-t.setAttribute('x',tx);t.setAttribute('y',ty);t.setAttribute('text-anchor',a);t.textContent=lab;g.appendChild(t);
-g.onclick=()=>{sel.v=sel.v===id?null:id;draw()};g.id='n-'+id;ng.appendChild(g)});
-function draw(){const s=sel.v;const nb=new Set();
+const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('stroke','var(--text)');c.setAttribute('stroke-width','1');g.appendChild(c);
+const t=document.createElementNS(ns,'text');t.textContent=lab;g.appendChild(t);
+g.onclick=()=>{sel.v=sel.v===id?null:id;draw()};ng.appendChild(g);nodeEls[id]={g,c,t,x,y,big:maj,pos}});
+function placeLabel(n,r){let tx=n.x,ty=n.y,a='middle';
+if(n.pos==='r'){tx=n.x+r+5;ty=n.y+4;a='start'}else if(n.pos==='l'){tx=n.x-r-5;ty=n.y+4;a='end'}else if(n.pos==='t'){ty=n.y-r-6}else{ty=n.y+r+14}
+if(tx>600&&a==='middle'){a='end';tx=n.x+r}
+n.t.setAttribute('x',tx.toFixed(1));n.t.setAttribute('y',ty.toFixed(1));n.t.setAttribute('text-anchor',a)}
+function draw(){const s=sel.v,C=cent(),R={};Object.keys(N).forEach(id=>R[id]=scaled(id,C,nodeEls[id].big?10:6));
+Object.entries(nodeEls).forEach(([id,n])=>{n.c.setAttribute('r',R[id].toFixed(1));n.c.setAttribute('fill',isFilled(id,C,n.big)?'var(--node-fill)':'var(--minor-fill)');placeLabel(n,R[id])});
+const nb=new Set();
 E.forEach(e=>{const vis=on[e[0]];const hit=!s||e[1]===s||e[2]===s;if(vis&&hit&&s){nb.add(e[1]);nb.add(e[2])}
+const a=nodeEls[e[1]],b=nodeEls[e[2]];const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);const off=(e.k===1?8:-14);
+const mx=(a.x+b.x)/2-dy/L*off,my=(a.y+b.y)/2+dx/L*off;const d1=Math.hypot(mx-a.x,my-a.y),d2=Math.hypot(b.x-mx,b.y-my);
+const r1=R[e[1]]+1,r2=R[e[2]]+2;
+const sx=a.x+(mx-a.x)/d1*r1,sy=a.y+(my-a.y)/d1*r1,ex=b.x-(b.x-mx)/d2*r2,ey=b.y-(b.y-my)/d2*r2;
+e.el.setAttribute('d',`M${sx.toFixed(1)} ${sy.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
 e.el.style.display=vis?'':'none';e.el.style.opacity=hit?1:0.07});
-Object.keys(N).forEach(id=>{document.getElementById('n-'+id).style.opacity=!s||nb.has(id)||id===s?1:0.25});
+Object.entries(nodeEls).forEach(([id,n])=>{n.g.style.opacity=!s||nb.has(id)||id===s?1:0.25});
 const info=document.getElementById('info');
-if(!s){info.innerHTML='Select a state to see its ties. Larger circles are the major powers.';return}
+if(!s){info.innerHTML=opt.mode==='none'?'Select a state to see its ties. Larger circles are the major powers; use "Size by" to scale states by a centrality measure instead.':topLine(C,i=>N[i][2].split(' · ')[0]);return}
 const n=N[s];const rows=E.filter(e=>on[e[0]]&&(e[1]===s||e[2]===s)).map(e=>{const o=e[1]===s?e[2]:e[1];return `<span style="color:${T[e[0]].c}">●</span> ${N[o][2].split(' · ')[0]}: ${e[3]}`});
-info.innerHTML=`<b>${n[2]}</b> — ${n[3]}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
+info.innerHTML=`<b>${n[2]}</b> — ${n[3]}. ${metrics(C,s)}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
 draw();
 </script>
 </body>
