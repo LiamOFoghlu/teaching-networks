@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Four email chains passed around a postgraduate class: an interactive network with centrality measures.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);}
+*{box-sizing:border-box}
+body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Poem and Song Chains</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column — stat strip, network panel, centrality table. */
+:root{
+  --bg:#f4f6f9; --surface:#ffffff; --fg:#141922; --muted:#5b6575; --faint:#8b94a3;
+  --line:#dde3ec; --rule:#eef1f6;
+  --c1:#2a78d6; --c2:#0d8e82; --c3:#e05a23; --c4:#8f4589;
+  --node:#e6eaf1; --nodeline:#b9c2cf; --nodeOn:#141922;
+  --display:"Newsreader",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1218; --surface:#161b23; --fg:#e9edf4; --muted:#98a2b2; --faint:#78828f;
+  --line:#28303c; --rule:#1e242e;
+  --c1:#5c9cea; --c2:#27b9aa; --c3:#f4834d; --c4:#c077b8;
+  --node:#232b36; --nodeline:#3b4654; --nodeOn:#e9edf4;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1218; --surface:#161b23; --fg:#e9edf4; --muted:#98a2b2; --faint:#78828f;
+  --line:#28303c; --rule:#1e242e;
+  --c1:#5c9cea; --c2:#27b9aa; --c3:#f4834d; --c4:#c077b8;
+  --node:#232b36; --nodeline:#3b4654; --nodeOn:#e9edf4;
+  color-scheme:dark;
+}
+body{background:var(--bg); color:var(--fg); font-family:var(--body);
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1040px; margin:0 auto; padding-block:30px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex; flex-direction:column; gap:26px;}
+
+h1{font-family:var(--display); font-weight:500; font-size:clamp(1.9rem,4.4vw,2.9rem);
+  line-height:1.08; margin:0; letter-spacing:-.012em; text-wrap:balance;}
+.sub{margin:.55rem 0 0; color:var(--muted); font-size:1rem; line-height:1.55; max-width:62ch;}
+
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); border-radius:9px; overflow:hidden;}
+.stat{background:var(--surface); padding:13px 15px; min-width:0;}
+.stat b{display:block; font-family:var(--mono); font-size:1.32rem; font-weight:600;
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em;}
+.stat span{display:block; margin-top:3px; font-size:.7rem; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--faint);}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:11px;}
+.panelhead{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 18px;
+  padding:14px 18px; border-bottom:1px solid var(--rule);}
+.panelhead h2{font-family:var(--display); font-weight:500; font-size:1.18rem; margin:0;}
+.hint{color:var(--faint); font-size:.82rem;}
+
+.legend{display:flex; flex-wrap:wrap; gap:7px; margin-left:auto;}
+.chip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line);
+  background:transparent; color:var(--fg); font:inherit; font-size:.83rem;
+  padding:5px 11px; border-radius:999px; cursor:pointer;}
+.chip i{width:11px; height:11px; border-radius:50%; background:var(--sw); display:block;}
+.chip[aria-pressed="false"]{opacity:.42;}
+.chip:focus-visible,.th:focus-visible{outline:2px solid var(--c1); outline-offset:2px;}
+
+.figwrap{padding:6px 6px 14px;}
+svg{display:block; width:100%; height:auto; touch-action:manipulation;}
+.edge{stroke-linecap:round; transition:opacity .14s;}
+.nodec{fill:var(--node); stroke:var(--nodeline); stroke-width:1.5; transition:opacity .14s;}
+.nodet{fill:var(--fg); font-family:var(--body); font-size:15px; text-anchor:middle;
+  transition:opacity .14s;}
+.ng{cursor:pointer;}
+.ng:focus{outline:none;}
+.ng:focus-visible .nodec{stroke:var(--c1); stroke-width:3.5;}
+.dim{opacity:.13;}
+.on .nodec{fill:var(--nodeOn); stroke:var(--nodeOn);}
+.on .nodet{font-weight:600;}
+
+.readout{min-height:1.4em; padding:0 18px 15px; color:var(--muted); font-size:.9rem;}
+.readout b{color:var(--fg); font-weight:600;}
+.readout .mono{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+
+.tscroll{overflow-x:auto;}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:.93rem;}
+th,td{padding:9px 14px; text-align:right; border-bottom:1px solid var(--rule);
+  white-space:nowrap;}
+th:first-child,td:first-child{text-align:left;}
+thead th{position:sticky; top:0; background:var(--surface); color:var(--faint);
+  font-weight:500; font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;}
+.th{background:none; border:0; color:inherit; font:inherit; letter-spacing:inherit;
+  text-transform:inherit; cursor:pointer; padding:0;}
+.th[data-dir]::after{content:" \25B4"; }
+.th[data-dir="desc"]::after{content:" \25BE";}
+tbody tr{transition:background .12s;}
+tbody tr.hot{background:color-mix(in srgb, var(--c1) 13%, transparent);}
+tbody td.num{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+tbody tr:last-child td{border-bottom:0;}
+.defs{margin:0; padding:16px 18px; display:grid; gap:15px;}
+.defs>div{display:grid; gap:3px;}
+.defs dt{font-weight:600; font-size:.95rem;}
+.defs dd{margin:0; color:var(--muted); font-size:.9rem; line-height:1.6; max-width:72ch;}
+.note{color:var(--muted); font-size:.88rem; line-height:1.6; max-width:68ch; margin:0;}
+@media (max-width:540px){ .nodet{font-size:19px;} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body><div class="wrap">
+  <header>
+    <h1>Poem and song chains</h1>
+    <p class="sub">Four email chains let loose in a postgraduate class. Every forward copied the
+      lecturer, so each tie is observed with a timestamp. Names replaced.</p>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <section class="panel">
+    <div class="panelhead">
+      <h2>The network</h2>
+      <span class="hint">Hover or tap a name</span>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="figwrap"><svg id="net" viewBox="0 0 1000 880" role="img"
+      aria-label="Network of fifteen students linked by four email chains"></svg></div>
+    <p class="readout" id="readout">Four chains, nineteen distinct ties, one connected component.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>Centrality</h2><span class="hint">Click a column to sort</span></div>
+    <div class="tscroll">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelhead"><h2>What the measures mean</h2></div>
+    <dl class="defs">
+      <div><dt>Density</dt><dd>The proportion of possible ties that actually exist: the number of
+        ties divided by the number of pairs. It runs from 0, where nobody is connected to anybody,
+        to 1, where everybody is connected to everybody. Density falls as a group gets larger,
+        because the number of possible pairs grows far faster than anyone's capacity for
+        contacts, so it is only comparable between networks of similar size.</dd></div>
+      <div><dt>Mean path</dt><dd>Take the shortest route between two people, count the steps, and
+        average that over every pair in the network. It says how far apart people typically are
+        once you allow for going through other people.</dd></div>
+      <div><dt>Diameter</dt><dd>The longest of those shortest routes: the number of steps between
+        the two people furthest apart. It is the worst case rather than the typical one, so it
+        tells you how far something would have to travel to reach the whole network.</dd></div>
+      <div><dt>Clustering</dt><dd>How often two people who share a contact are also connected to
+        each other, averaged across everyone. It measures closed triangles. A chain passed from
+        hand to hand produces almost none, so any clustering here was created when two chains
+        crossed.</dd></div>
+    </dl>
+  </section>
+
+  <p class="note">Betweenness and closeness are computed on the undirected union of all four
+    chains; the tie between Dáin and Dori carries two chains and counts once.</p>
+</div>
+
+<script>
+const DATA = {"nodes":[{"id":"Balin","x":0.4995,"y":0.8298,"deg":2,"indeg":1,"outdeg":1,"bet":0.1,"clo":0.37},{"id":"Bifur","x":0.8158,"y":1.0,"deg":2,"indeg":1,"outdeg":1,"bet":0.0,"clo":0.32},{"id":"Bofur","x":0.8487,"y":0.0429,"deg":2,"indeg":1,"outdeg":1,"bet":0.04,"clo":0.32},{"id":"Bombur","x":0.6799,"y":0.9352,"deg":3,"indeg":1,"outdeg":2,"bet":0.09,"clo":0.35},{"id":"Dain","x":0.8225,"y":0.8136,"deg":4,"indeg":3,"outdeg":1,"bet":0.19,"clo":0.39},{"id":"Dori","x":0.7394,"y":0.647,"deg":2,"indeg":1,"outdeg":1,"bet":0.07,"clo":0.41},{"id":"Dwalin","x":0.4272,"y":0.6183,"deg":3,"indeg":1,"outdeg":2,"bet":0.35,"clo":0.44},{"id":"Fili","x":1.0,"y":0.0,"deg":2,"indeg":1,"outdeg":1,"bet":0.01,"clo":0.28},{"id":"Gimli","x":0.1847,"y":0.6263,"deg":2,"indeg":1,"outdeg":1,"bet":0.14,"clo":0.33},{"id":"Gloin","x":0.0,"y":0.6356,"deg":1,"indeg":0,"outdeg":1,"bet":0.0,"clo":0.25},{"id":"Kili","x":0.7656,"y":0.2473,"deg":3,"indeg":2,"outdeg":1,"bet":0.15,"clo":0.41},{"id":"Nori","x":0.9188,"y":0.6051,"deg":2,"indeg":1,"outdeg":1,"bet":0.13,"clo":0.4},{"id":"Oin","x":0.9988,"y":0.1809,"deg":2,"indeg":1,"outdeg":1,"bet":0.09,"clo":0.35},{"id":"Ori","x":0.8671,"y":0.3749,"deg":4,"indeg":2,"outdeg":2,"bet":0.29,"clo":0.47},{"id":"Thorin","x":0.6645,"y":0.461,"deg":4,"indeg":2,"outdeg":2,"bet":0.4,"clo":0.5}],"edges":[{"a":"Gloin","b":"Gimli","chains":["poem A"]},{"a":"Gimli","b":"Dwalin","chains":["poem A"]},{"a":"Dwalin","b":"Thorin","chains":["poem A"]},{"a":"Dwalin","b":"Balin","chains":["song B"]},{"a":"Thorin","b":"Kili","chains":["poem A"]},{"a":"Thorin","b":"Dori","chains":["song A"]},{"a":"Thorin","b":"Ori","chains":["song A"]},{"a":"Kili","b":"Bofur","chains":["poem A"]},{"a":"Kili","b":"Ori","chains":["song A"]},{"a":"Bofur","b":"Fili","chains":["poem A"]},{"a":"Fili","b":"Oin","chains":["poem A"]},{"a":"Oin","b":"Ori","chains":["poem A"]},{"a":"Ori","b":"Nori","chains":["poem A"]},{"a":"Nori","b":"Dain","chains":["poem A"]},{"a":"Dain","b":"Dori","chains":["poem A","song B"]},{"a":"Dain","b":"Bifur","chains":["poem B"]},{"a":"Dain","b":"Bombur","chains":["song B"]},{"a":"Bombur","b":"Bifur","chains":["poem B"]},{"a":"Bombur","b":"Balin","chains":["song B"]}],"stats":{"reached":15,"classSize":17,"forwards":20,"ties":19,"density":0.181,"diameter":6,"meanPath":2.78,"clustering":0.144}};
+const CH = {"poem A":"--c1","poem B":"--c2","song A":"--c3","song B":"--c4"};
+const ACC = {"Gloin":"Glóin","Oin":"Óin","Dain":"Dáin","Fili":"Fíli","Kili":"Kíli"};
+const nm = id => ACC[id] || id;
+
+/* stat strip */
+const S = DATA.stats;
+document.getElementById("stats").innerHTML = [
+  [S.forwards, "forwards"],
+  [S.ties, "ties"],
+  [S.density.toFixed(2), "density"],
+  [S.meanPath.toFixed(2), "mean path"],
+  [S.diameter, "diameter"],
+  [S.clustering.toFixed(2), "clustering"],
+].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
+
+/* geometry */
+const VW = 1000, VH = 880, MX = 86, MYT = 54, MYB = 76, R = 21;
+const P = {};
+DATA.nodes.forEach(n => { P[n.id] = [MX + n.x * (VW - 2 * MX), MYT + n.y * (VH - MYT - MYB)]; });
+
+const svg = document.getElementById("net");
+const NS = "http://www.w3.org/2000/svg";
+const el = (t, a) => { const e = document.createElementNS(NS, t);
+  for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+const nbr = {}; DATA.nodes.forEach(n => nbr[n.id] = new Set());
+const edgeEls = [];
+DATA.edges.forEach(e => {
+  nbr[e.a].add(e.b); nbr[e.b].add(e.a);
+  const [x0, y0] = P[e.a], [x1, y1] = P[e.b];
+  const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
+  const ux = dx / L, uy = dy / L, px = -uy, py = ux;
+  const offs = e.chains.length > 1 ? [-5, 5] : [0];
+  e.chains.forEach((ch, i) => {
+    const o = offs[i];
+    const line = el("line", {
+      x1: x0 + ux * (R + 1) + px * o, y1: y0 + uy * (R + 1) + py * o,
+      x2: x1 - ux * (R + 1) + px * o, y2: y1 - uy * (R + 1) + py * o,
+      stroke: `var(${CH[ch]})`, "stroke-width": 3, class: "edge"
+    });
+    line.dataset.chain = ch; line.dataset.a = e.a; line.dataset.b = e.b;
+    svg.appendChild(line); edgeEls.push(line);
+  });
+});
+
+const nodeEls = {};
+DATA.nodes.forEach(n => {
+  const [x, y] = P[n.id];
+  const g = el("g", { class: "ng", tabindex: "0", role: "button" });
+  g.setAttribute("aria-label", nm(n.id) + ", degree " + n.deg);
+  g.appendChild(el("circle", { cx: x, cy: y, r: R, class: "nodec" }));
+  const t = el("text", { x: x, y: y + R + 20, class: "nodet" });
+  t.textContent = nm(n.id);
+  g.appendChild(t);
+  g.dataset.id = n.id;
+  svg.appendChild(g); nodeEls[n.id] = g;
+});
+
+/* interaction */
+const off = new Set();
+let pinned = null, hover = null;
+const readout = document.getElementById("readout");
+
+function paint() {
+  const sel = hover || pinned;
+  edgeEls.forEach(l => {
+    const hidden = off.has(l.dataset.chain);
+    const touches = sel && (l.dataset.a === sel || l.dataset.b === sel);
+    l.classList.toggle("dim", hidden || (!!sel && !touches));
+  });
+  DATA.nodes.forEach(n => {
+    const g = nodeEls[n.id];
+    const near = sel && (n.id === sel || nbr[sel].has(n.id));
+    g.classList.toggle("dim", !!sel && !near);
+    g.classList.toggle("on", n.id === sel);
+  });
+  document.querySelectorAll("#tbody tr").forEach(tr =>
+    tr.classList.toggle("hot", tr.dataset.id === sel));
+  if (sel) {
+    const n = DATA.nodes.find(d => d.id === sel);
+    const names = [...nbr[sel]].map(nm).sort().join(", ");
+    readout.innerHTML = `<b>${nm(sel)}</b> &middot; degree <span class="mono">${n.deg}</span>
+      (in <span class="mono">${n.indeg}</span>, out <span class="mono">${n.outdeg}</span>)
+      &middot; betweenness <span class="mono">${n.bet.toFixed(2)}</span>
+      &middot; closeness <span class="mono">${n.clo.toFixed(2)}</span><br>Linked to ${names}.`;
+  } else {
+    readout.textContent = "Four chains, nineteen distinct ties, one connected component.";
+  }
+}
+
+Object.values(nodeEls).forEach(g => {
+  const id = g.dataset.id;
+  g.addEventListener("mouseenter", () => { hover = id; paint(); });
+  g.addEventListener("mouseleave", () => { hover = null; paint(); });
+  g.addEventListener("focus", () => { hover = id; paint(); });
+  g.addEventListener("blur", () => { hover = null; paint(); });
+  g.addEventListener("click", () => { pinned = pinned === id ? null : id; hover = null; paint(); });
+  g.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); g.click(); }
+  });
+});
+
+/* legend */
+const legend = document.getElementById("legend");
+Object.keys(CH).forEach(ch => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed", "true");
+  b.style.setProperty("--sw", `var(${CH[ch]})`);
+  b.innerHTML = `<i></i>${ch}`;
+  b.addEventListener("click", () => {
+    const on = b.getAttribute("aria-pressed") === "true";
+    b.setAttribute("aria-pressed", on ? "false" : "true");
+    on ? off.add(ch) : off.delete(ch);
+    paint();
+  });
+  legend.appendChild(b);
+});
+
+/* table */
+const COLS = [
+  ["id", "Name", false], ["deg", "Degree", true], ["indeg", "In", true],
+  ["outdeg", "Out", true], ["bet", "Betweenness", true], ["clo", "Closeness", true],
+];
+let sortKey = "bet", sortDir = "desc";
+const thead = document.getElementById("thead"), tbody = document.getElementById("tbody");
+
+thead.innerHTML = COLS.map(([k, label]) =>
+  `<th scope="col"><button class="th" type="button" data-k="${k}">${label}</button></th>`).join("");
+
+function draw() {
+  const rows = [...DATA.nodes].sort((a, b) => {
+    let x = a[sortKey], y = b[sortKey];
+    if (sortKey === "id") { x = nm(x); y = nm(y); return sortDir === "asc"
+      ? x.localeCompare(y) : y.localeCompare(x); }
+    return sortDir === "asc" ? x - y : y - x;
+  });
+  tbody.innerHTML = rows.map(n => `<tr data-id="${n.id}"><td>${nm(n.id)}</td>
+    <td class="num">${n.deg}</td><td class="num">${n.indeg}</td><td class="num">${n.outdeg}</td>
+    <td class="num">${n.bet.toFixed(2)}</td><td class="num">${n.clo.toFixed(2)}</td></tr>`).join("");
+  thead.querySelectorAll(".th").forEach(b => {
+    if (b.dataset.k === sortKey) b.dataset.dir = sortDir; else delete b.dataset.dir;
+  });
+  tbody.querySelectorAll("tr").forEach(tr => {
+    tr.addEventListener("mouseenter", () => { hover = tr.dataset.id; paint(); });
+    tr.addEventListener("mouseleave", () => { hover = null; paint(); });
+  });
+  paint();
+}
+thead.querySelectorAll(".th").forEach(b => b.addEventListener("click", () => {
+  const k = b.dataset.k;
+  if (k === sortKey) sortDir = sortDir === "asc" ? "desc" : "asc";
+  else { sortKey = k; sortDir = k === "id" ? "asc" : "desc"; }
+  draw();
+}));
+draw();
+</script>
+
+</body>
+</html>
