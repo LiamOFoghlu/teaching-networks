@@ -3,100 +3,290 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dynastic Europe c. 1500</title>
+<meta name="description" content="Marriages, alliances, dynastic unions and vassalage among European states, 1200–1600, century by century.">
+<title>Dynastic Europe 1200–1600</title>
 <style>
 :root{--bg:#ffffff;--text:#1f1e1b;--muted:#6b6a64;--border:rgba(0,0,0,.12);--node-fill:#1f1e1b;--minor-fill:#ffffff}
 @media (prefers-color-scheme:dark){:root{--bg:#1c1c1a;--text:#ecebe6;--muted:#a3a29b;--border:rgba(255,255,255,.14);--node-fill:#ecebe6;--minor-fill:#1c1c1a}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
-main{max-width:760px;margin:0 auto;padding:24px 16px 32px}
+main{max-width:860px;margin:0 auto;padding:24px 16px 32px}
 h1{font-size:22px;font-weight:500;margin:0 0 4px}
 .sub{font-size:14px;color:var(--muted);margin:0 0 16px}
-.lg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px;align-items:center}
-.lg label{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.lg,.ctl{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 8px;align-items:center}
+.lg label,.ctl label{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
 .lg svg{flex:none}
-.lg select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px}
-.lg .sep{width:1px;height:16px;background:var(--border)}
+.sep{width:1px;height:16px;background:var(--border)}
+.ctl select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px}
+.years{display:flex;gap:6px;flex-wrap:wrap}
+.years button{font:inherit;font-size:14px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:3px 14px;cursor:pointer}
+.years button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+#yr{width:200px}
 #net{display:block;width:100%;height:auto}
 #net .e{transition:opacity .2s}
-#net .n{cursor:pointer}
+#net .n{cursor:pointer;transition:opacity .2s}
 #net .n text{font-size:12px;fill:var(--text)}
-#net .n{transition:opacity .2s}
 #info{font-size:13px;color:var(--muted);line-height:1.6;min-height:64px;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
 #info b{font-weight:500;color:var(--text)}
 .note{font-size:12px;color:var(--muted);margin-top:20px;border-top:1px solid var(--border);padding-top:10px}
+.note p{margin:0 0 6px}
 </style>
 </head>
 <body>
 <main>
-<h1>Dynastic Europe c. 1500</h1>
-<p class="sub">Marriages, alliances, dynastic unions and vassalage among European states. Click a state to isolate its ties; use the legend to filter.</p>
+<h1>Dynastic Europe, 1200–1600</h1>
+<p class="sub">Marriages, alliances, dynastic unions and vassalage among European states, one snapshot per century. Click a state to isolate its ties; use the legend to filter.</p>
+<div class="ctl"><input type="range" id="yr" min="0" max="4" step="1" value="0" aria-label="Year"><div class="years" id="years"></div></div>
 <div class="lg" id="lg"></div>
-<svg id="net" viewBox="0 0 680 470" role="img" aria-labelledby="t d"><title id="t">European dynastic network c. 1500</title><desc id="d">States placed roughly geographically, linked by marriage, alliance, dynastic union and vassalage.</desc>
+<svg id="net" viewBox="0 0 760 500" role="img" aria-labelledby="t d"><title id="t">European dynastic network, 1200–1600</title><desc id="d">States placed roughly geographically, linked by marriage, alliance, dynastic union, vassalage and, in 1400, allegiance in the papal schism.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <g id="edges"></g><g id="nodes"></g></svg>
 <div id="info"></div>
-<p class="note">Snapshot spans roughly 1494–1502, so a few ties (e.g. Margaret Tudor's and Lucrezia Borgia's marriages) fall just after 1500. Positions are approximate. Ties between states are in practice ties between ruling houses; many smaller polities are omitted. Centrality is computed on the ties currently shown, treating them as undirected and counting several ties between the same pair once. Betweenness is normalised to 0–1; closeness is harmonic closeness, which still works when hiding some tie types cuts a node off.</p>
+<div class="note">
+<p>Each snapshot is approximate: ties are dated within a few years of the century mark, and a few fall just after it. Positions are roughly geographic. Ties between states are in practice ties between ruling houses; wars and rivalries are not shown, and many smaller polities are omitted. Centrality is computed on the ties currently shown, treating them as undirected and counting several ties between the same pair once. Betweenness is normalised to 0–1; closeness is harmonic closeness, which still works when some states are cut off.</p>
+<p>This network was generated by Claude (Anthropic) from its general historical knowledge, with selected facts checked against Wikipedia and Encyclopedia.com. It is a teaching sketch rather than a research dataset, so errors are possible.</p>
+</div>
 </main>
 <script>
-const T={union:{c:'#7F77DD',w:2.6,d:'',n:'Same dynasty / union'},marriage:{c:'#D4537E',w:1.6,d:'',n:'Dynastic marriage'},alliance:{c:'#1D9E75',w:1.4,d:'6 4',n:'Alliance / pact'},vassal:{c:'#888780',w:1.2,d:'4 3',n:'Vassal or tributary → overlord'}};
-const N={
-scotland:[150,55,'Scotland · Stewart','James IV',0,'r'],
-england:[178,128,'England · Tudor','Henry VII',1,'r'],
-brittany:[163,203,'Brittany','Duchess Anne, queen of France',0,'l'],
-navarre:[176,278,'Navarre · Albret','Catherine of Foix and John III',0,'l'],
-portugal:[45,345,'Portugal · Avis','Manuel I',1,'b'],
-castile:[112,322,'Castile · Trastámara','Isabella I',1,'b'],
-aragon:[200,345,'Aragon · Trastámara','Ferdinand II (also Sicily, Sardinia)',1,'b'],
-france:[252,215,'France · Valois','Louis XII (Valois-Orléans)',1,'b'],
-burgundy:[288,128,'Low Countries · Habsburg','Philip the Handsome',1,'r'],
-hre:[392,185,'Empire · Habsburg','Maximilian I, King of the Romans',1,'b'],
-savoy:[298,262,'Savoy','Philibert II',0,'l'],
-milan:[340,262,'Milan · Sforza','Ludovico Sforza, ousted by France 1499–1500',0,'t'],
-venice:[422,282,'Venice · republic','Doge Agostino Barbarigo',1,'r'],
-ferrara:[378,306,'Ferrara · Este','Ercole I d\'Este',0,'r'],
-florence:[345,336,'Florence · republic','Republic; Medici in exile since 1494',0,'l'],
-papal:[400,362,'Papacy · Borgia','Alexander VI; Cesare Borgia in Romagna',1,'r'],
-naples:[452,425,'Naples · Trastámara','Frederick, of the cadet Aragonese line',0,'b'],
-denmark:[352,58,'Denmark–Norway · Oldenburg','Hans',1,'b'],
-sweden:[440,32,'Sweden · Sture','Regent Sten Sture the Elder',0,'r'],
-teutonic:[478,98,'Teutonic Order','Grand Master Frederick of Saxony',0,'t'],
-poland:[502,168,'Poland · Jagiellon','John I Albert (d. 1501)',1,'b'],
-lithuania:[585,135,'Lithuania · Jagiellon','Grand Duke Alexander',1,'b'],
-bohhun:[482,238,'Bohemia–Hungary · Jagiellon','Vladislaus II',1,'r'],
-muscovy:[640,66,'Muscovy · Rurikid','Ivan III',1,'b'],
-moldavia:[578,286,'Moldavia · Mușat','Stephen the Great',0,'b'],
-wallachia:[528,332,'Wallachia','Radu IV the Great',0,'b'],
-crimea:[648,322,'Crimea · Giray','Meñli I Giray',0,'b'],
-ottoman:[598,408,'Ottoman · Osman','Bayezid II',1,'b']};
-const E=[
+const T={union:{c:'#7F77DD',w:2.6,d:'',n:'Same dynasty / union'},marriage:{c:'#D4537E',w:1.6,d:'',n:'Dynastic marriage'},alliance:{c:'#1D9E75',w:1.4,d:'6 4',n:'Alliance / pact'},vassal:{c:'#888780',w:1.2,d:'4 3',n:'Vassal or tributary → overlord'},obedience:{c:'#EF9F27',w:1.4,d:'1 4',n:'Schism allegiance (1400)'}};
+const P={norway:[330,30,'l'],sweden:[440,30,'r'],denmark:[350,92,'b'],scotland:[150,55,'r'],england:[178,130,'r'],dutch:[300,95,'l'],low:[285,148,'r'],welf:[385,128,'r'],brittany:[175,200,'l'],france:[250,215,'b'],toulouse:[200,275,'l'],avignon:[268,285,'r'],navarre:[160,255,'l'],portugal:[45,360,'b'],leon:[78,310,'l'],castile:[118,340,'b'],aragon:[205,345,'r'],savoy:[300,258,'l'],milan:[342,248,'r'],venice:[425,268,'r'],ferrara:[392,302,'r'],florence:[348,330,'l'],papal:[402,356,'r'],naples:[455,415,'r'],sicily:[392,465,'r'],hre:[390,188,'b'],bohemia:[452,170,'r'],hungary:[505,250,'r'],poland:[525,150,'t'],teutonic:[480,82,'t'],lithuania:[605,108,'r'],muscovy:[690,55,'b'],horde:[700,205,'b'],crimea:[668,318,'b'],moldavia:[598,272,'r'],wallachia:[555,318,'b'],serbia:[492,332,'b'],bulgaria:[575,372,'r'],byzantium:[598,430,'b'],ottoman:[705,468,'b']};
+const Y=[1200,1300,1400,1500,1600];
+const D={
+1200:{N:{
+england:['England · Plantagenet','John; also rules Normandy, Anjou and Aquitaine',1],
+france:['France · Capetian','Philip II Augustus',1],
+scotland:['Scotland · Dunkeld','William I the Lion',0],
+low:['Flanders','Count Baldwin IX',0],
+toulouse:['Toulouse','Count Raymond VI',0],
+navarre:['Navarre · Jiménez','Sancho VII the Strong',0],
+castile:['Castile · Ivrea','Alfonso VIII',1],
+leon:['León · Ivrea','Alfonso IX',0],
+portugal:['Portugal · Burgundy','Sancho I',0],
+aragon:['Aragon · Barcelona','Peter II',0],
+papal:['Papacy','Innocent III',1],
+hre:['Empire · Hohenstaufen','Philip of Swabia, contested King of the Romans',1],
+welf:['Welf party','Otto IV, rival King of the Romans',0],
+naples:['Sicily · Hohenstaufen','Frederick II, a minor; the kingdom includes Naples',0],
+venice:['Venice · republic','Doge Enrico Dandolo',1],
+bohemia:['Bohemia · Přemyslid','Ottokar I',0],
+hungary:['Hungary · Árpád','Emeric',1],
+poland:['Poland · Piast','Fragmented among dukes; Mieszko III the Old in Kraków',0],
+denmark:['Denmark · Estridsen','Canute VI',0],
+byzantium:['Byzantium · Angelos','Alexios III',1],
+serbia:['Serbia · Nemanjić','Grand Prince Stefan Nemanjić',0],
+bulgaria:['Bulgaria · Asen','Kaloyan',0]},
+E:[
+['union','hre','naples','Frederick II is Philip of Swabia\'s nephew; both Hohenstaufen'],
+['union','castile','leon','Two branches of the same house (Ivrea)'],
+['marriage','castile','leon','Alfonso IX married Berenguela of Castile (1197)'],
+['marriage','england','castile','Alfonso VIII married Eleanor, daughter of Henry II'],
+['marriage','france','castile','Blanche of Castile marries the future Louis VIII (1200)'],
+['marriage','england','navarre','Richard I married Berengaria of Navarre (1191)'],
+['marriage','france','denmark','Philip II married Ingeborg of Denmark (1193), then repudiated her'],
+['marriage','hre','byzantium','Philip of Swabia married Irene Angelina (1197)'],
+['marriage','serbia','byzantium','Stefan Nemanjić married Eudokia, daughter of Alexios III'],
+['marriage','bohemia','hungary','Ottokar I marries Constance of Hungary (1199)'],
+['marriage','hungary','aragon','Emeric married Constance of Aragon (c. 1198)'],
+['marriage','england','toulouse','Raymond VI married Joan of England (1196)'],
+['marriage','aragon','toulouse','Raymond VI marries Eleanor of Aragon (1204)'],
+['alliance','england','welf','Otto IV, John\'s nephew, backed by Angevin money'],
+['alliance','france','hre','Philip II allies with Philip of Swabia (1198)'],
+['alliance','england','france','Treaty of Le Goulet (1200)'],
+['alliance','papal','welf','Innocent III recognises Otto IV (1201)'],
+['alliance','england','low','Baldwin IX allied with Richard I and John against Philip II'],
+['alliance','bulgaria','papal','Kaloyan negotiates church union with Innocent III; crowned 1204'],
+['alliance','venice','byzantium','Alexios III renews Venice\'s trade privileges (1198)'],
+['vassal','low','france','Flanders held from the French crown'],
+['vassal','toulouse','france','County held from the French crown'],
+['vassal','england','france','John does homage to Philip II for his French lands (1200)'],
+['vassal','scotland','england','William does homage to John at Lincoln (1200)'],
+['vassal','naples','papal','Kingdom a papal fief; Innocent III is Frederick\'s guardian'],
+['vassal','portugal','papal','Papal protection and annual census since 1179'],
+['vassal','aragon','papal','Peter II crowned in Rome as a papal vassal (1204)'],
+['vassal','bohemia','hre','Philip of Swabia grants Ottokar the royal title (1198)']]},
+1300:{N:{
+england:['England · Plantagenet','Edward I',1],
+france:['France · Capetian','Philip IV the Fair',1],
+navarre:['Navarre · Capetian','Joan I, wife of Philip IV',0],
+scotland:['Scotland','Guardians; John Balliol in exile',0],
+low:['Flanders','Count Guy of Dampierre; occupied by France 1300',0],
+castile:['Castile · Ivrea','Ferdinand IV, a minor',1],
+portugal:['Portugal · Burgundy','Denis',0],
+aragon:['Aragon · Barcelona','James II',1],
+sicily:['Sicily · Barcelona','Frederick III',0],
+naples:['Naples · Anjou','Charles II',0],
+papal:['Papacy','Boniface VIII',1],
+hre:['Empire · Habsburg','Albert I',1],
+bohemia:['Bohemia · Přemyslid','Wenceslaus II',1],
+poland:['Poland · Přemyslid','Wenceslaus II, crowned 1300',0],
+hungary:['Hungary · Árpád','Andrew III, the last Árpád (d. 1301)',0],
+milan:['Milan · Visconti','Matteo I Visconti, imperial vicar',0],
+florence:['Florence · republic','Guelph commune',0],
+venice:['Venice · republic','Doge Pietro Gradenigo',1],
+denmark:['Denmark · Estridsen','Eric VI Menved',0],
+sweden:['Sweden · Bjelbo','Birger',0],
+norway:['Norway · Sverre','Haakon V',0],
+byzantium:['Byzantium · Palaiologos','Andronikos II',1],
+serbia:['Serbia · Nemanjić','Stefan Milutin',0],
+bulgaria:['Bulgaria · Terter','Theodore Svetoslav',0],
+horde:['Golden Horde','Khan Toqta',1],
+muscovy:['Vladimir · Rurikid','Grand Prince Andrei of Gorodets',0],
+ottoman:['Ottoman beylik','Osman I',0]},
+E:[
+['union','france','navarre','Philip IV rules Navarre through his wife, Joan I'],
+['union','france','naples','The Angevins of Naples are a Capetian cadet line'],
+['union','aragon','sicily','James II and Frederick III are brothers (house of Barcelona)'],
+['union','naples','hungary','Charles Robert of Anjou, Charles II\'s grandson, claims Hungary (1300)'],
+['union','bohemia','poland','Wenceslaus II crowned king of Poland (1300)'],
+['marriage','england','france','Edward I marries Margaret of France (1299)'],
+['marriage','hre','france','Rudolf of Habsburg marries Blanche of France (1300)'],
+['marriage','bohemia','hre','Wenceslaus II married Judith of Habsburg, Albert I\'s sister'],
+['marriage','hungary','hre','Andrew III married Agnes of Austria, Albert I\'s daughter (1296)'],
+['marriage','aragon','naples','James II married Blanche of Anjou (1295)'],
+['marriage','portugal','aragon','Denis married Isabel of Aragon (1282)'],
+['marriage','castile','portugal','Ferdinand IV betrothed to Constance of Portugal (Alcañices, 1297)'],
+['marriage','sicily','naples','Frederick III to marry Eleanor of Anjou (Caltabellotta, 1302)'],
+['marriage','denmark','sweden','Double marriage: Eric VI–Ingeborg and Birger–Martha (1296–98)'],
+['marriage','norway','sweden','Haakon V\'s daughter betrothed to Duke Eric of Sweden (1302)'],
+['marriage','serbia','byzantium','Milutin marries Simonis, daughter of Andronikos II (1299)'],
+['alliance','france','scotland','The Auld Alliance (1295)'],
+['alliance','papal','scotland','Boniface VIII\'s bull Scimus, fili (1299) rejects English claims'],
+['alliance','france','hre','Albert I and Philip IV meet at Quatrevaux (1299)'],
+['alliance','florence','papal','Guelph Florence aligned with the Pope'],
+['alliance','florence','naples','Guelph alliance with the Angevins'],
+['alliance','england','low','Anglo-Flemish alliance against Philip IV (1297)'],
+['vassal','low','france','Flanders held from, and occupied by, the French crown'],
+['vassal','naples','papal','Kingdom held as a papal fief'],
+['vassal','aragon','papal','Boniface VIII enfeoffs James II with Sardinia and Corsica (1297)'],
+['vassal','bohemia','hre','Imperial elector'],
+['vassal','milan','hre','Matteo Visconti rules as imperial vicar'],
+['vassal','muscovy','horde','Rus\' princes rule by the Horde\'s patent (yarlyk)'],
+['vassal','bulgaria','horde','Tributary to the Horde until c. 1300']]},
+1400:{N:{
+england:['England · Lancaster','Henry IV',1],
+france:['France · Valois','Charles VI',1],
+low:['Burgundy · Valois','Philip the Bold, duke of Burgundy and count of Flanders',1],
+scotland:['Scotland · Stewart','Robert III',0],
+castile:['Castile · Trastámara','Henry III',1],
+aragon:['Aragon · Barcelona','Martin I',1],
+sicily:['Sicily · Barcelona','Martin the Younger',0],
+navarre:['Navarre · Évreux','Charles III the Noble',0],
+portugal:['Portugal · Avis','John I',0],
+papal:['Papacy (Rome)','Boniface IX',1],
+avignon:['Papacy (Avignon)','Benedict XIII; France, Castile and Navarre withdrew obedience 1398–1403',0],
+hre:['Empire · Wittelsbach','Rupert of the Palatinate, elected 1400',1],
+bohemia:['Bohemia · Luxembourg','Wenceslaus IV, deposed as King of the Romans 1400',1],
+hungary:['Hungary · Luxembourg','Sigismund',1],
+poland:['Poland · Jagiellon','Władysław II Jagiełło',1],
+lithuania:['Lithuania · Gediminid','Grand Duke Vytautas',1],
+teutonic:['Teutonic Order','Grand Master Konrad von Jungingen',0],
+denmark:['Kalmar Union','Eric of Pomerania; Margaret I rules',1],
+muscovy:['Muscovy · Rurikid','Vasily I',0],
+horde:['Golden Horde','Edigu, with Khan Shadi Beg',1],
+milan:['Milan · Visconti','Gian Galeazzo Visconti',1],
+florence:['Florence · republic','Albizzi oligarchy',0],
+venice:['Venice · republic','Doge Michele Steno',1],
+naples:['Naples · Anjou-Durazzo','Ladislaus',0],
+byzantium:['Byzantium · Palaiologos','Manuel II',0],
+ottoman:['Ottoman · Osman','Bayezid I',1],
+serbia:['Serbia · Lazarević','Despot Stefan Lazarević',0],
+wallachia:['Wallachia','Mircea the Elder',0],
+moldavia:['Moldavia · Mușat','Alexander the Good',0]},
+E:[
+['union','france','low','Philip the Bold is Charles VI\'s uncle (Valois)'],
+['union','aragon','sicily','Martin the Younger is Martin I\'s son and heir'],
+['union','bohemia','hungary','Wenceslaus IV and Sigismund are brothers (Luxembourg)'],
+['union','poland','lithuania','Union of Krewo (1385), renewed at Vilnius–Radom (1401)'],
+['marriage','england','portugal','John I married Philippa of Lancaster, Henry IV\'s sister (1387)'],
+['marriage','england','castile','Henry III married Catherine of Lancaster, Henry IV\'s half-sister (1388)'],
+['marriage','england','hre','Henry IV\'s daughter Blanche marries Rupert\'s son Louis (1402)'],
+['marriage','england','denmark','Philippa of England to marry Eric of Pomerania (agreed 1401–02, wed 1406)'],
+['marriage','france','milan','Valentina Visconti married Louis of Orléans (1389)'],
+['marriage','sicily','navarre','Martin the Younger marries Blanche of Navarre (1402)'],
+['marriage','navarre','castile','Charles III married Eleanor of Castile'],
+['marriage','lithuania','muscovy','Vasily I married Sophia, Vytautas\'s daughter (1391)'],
+['marriage','serbia','ottoman','Olivera Lazarević married Bayezid I'],
+['alliance','england','portugal','Treaty of Windsor (1386)'],
+['alliance','france','scotland','The Auld Alliance'],
+['alliance','france','castile','Franco-Castilian alliance since 1368'],
+['alliance','florence','hre','Florence finances Rupert\'s Italian expedition (1401)'],
+['alliance','lithuania','teutonic','Treaty of Salynas (1398)'],
+['alliance','wallachia','poland','Alliance of 1389, renewed 1404'],
+['obedience','scotland','avignon','Scotland stays loyal to Benedict XIII'],
+['obedience','aragon','avignon','Aragon stays loyal to Benedict XIII, an Aragonese'],
+['obedience','england','papal','Recognises the Roman pope'],
+['obedience','hre','papal','Rupert recognised by Boniface IX (1403)'],
+['obedience','hungary','papal','Recognises the Roman pope'],
+['obedience','poland','papal','Recognises the Roman pope'],
+['obedience','portugal','papal','Recognises the Roman pope'],
+['obedience','venice','papal','Recognises the Roman pope'],
+['obedience','florence','papal','Recognises the Roman pope'],
+['vassal','low','france','Peer of France for Burgundy and Flanders'],
+['vassal','naples','papal','Kingdom a papal fief; Boniface IX backs Ladislaus'],
+['vassal','milan','hre','Duke by grant of Wenceslaus (1395)'],
+['vassal','muscovy','horde','Tributary to the Horde'],
+['vassal','byzantium','ottoman','Tributary vassal of the Ottomans'],
+['vassal','serbia','ottoman','Ottoman vassal since Kosovo (1389)'],
+['vassal','moldavia','poland','Alexander does homage to Władysław (1402)']]},
+1500:{N:{
+scotland:['Scotland · Stewart','James IV',0],
+england:['England · Tudor','Henry VII',1],
+brittany:['Brittany','Duchess Anne, queen of France',0],
+navarre:['Navarre · Albret','Catherine of Foix and John III',0],
+portugal:['Portugal · Avis','Manuel I',1],
+castile:['Castile · Trastámara','Isabella I',1],
+aragon:['Aragon · Trastámara','Ferdinand II; also Sicily and Sardinia',1],
+france:['France · Valois','Louis XII (Valois-Orléans)',1],
+low:['Low Countries · Habsburg','Philip the Handsome',1],
+hre:['Empire · Habsburg','Maximilian I, King of the Romans',1],
+savoy:['Savoy','Philibert II',0],
+milan:['Milan · Sforza','Ludovico Sforza, ousted by France 1499–1500',0],
+venice:['Venice · republic','Doge Agostino Barbarigo',1],
+ferrara:['Ferrara · Este','Ercole I d\'Este',0],
+florence:['Florence · republic','Republic; Medici in exile since 1494',0],
+papal:['Papacy · Borgia','Alexander VI; Cesare Borgia in Romagna',1],
+naples:['Naples · Trastámara','Frederick, of the cadet Aragonese line',0],
+denmark:['Denmark–Norway · Oldenburg','Hans',1],
+sweden:['Sweden · Sture','Regent Sten Sture the Elder',0],
+teutonic:['Teutonic Order','Grand Master Frederick of Saxony',0],
+poland:['Poland · Jagiellon','John I Albert (d. 1501)',1],
+lithuania:['Lithuania · Jagiellon','Grand Duke Alexander',1],
+bohemia:['Bohemia · Jagiellon','Vladislaus II',1],
+hungary:['Hungary · Jagiellon','Vladislaus II',1],
+muscovy:['Muscovy · Rurikid','Ivan III',1],
+moldavia:['Moldavia · Mușat','Stephen the Great',0],
+wallachia:['Wallachia','Radu IV the Great',0],
+crimea:['Crimea · Giray','Meñli I Giray',0],
+ottoman:['Ottoman · Osman','Bayezid II',1]},
+E:[
 ['union','castile','aragon','Union of crowns under the Catholic Monarchs'],
 ['union','poland','lithuania','Jagiellon brothers John Albert and Alexander'],
-['union','poland','bohhun','Jagiellon brothers; Vladislaus II the eldest'],
-['union','burgundy','hre','Philip is Maximilian\'s son and heir'],
+['union','poland','hungary','Jagiellon brothers; Vladislaus II the eldest'],
+['union','bohemia','hungary','Vladislaus II rules both kingdoms'],
+['union','low','hre','Philip is Maximilian\'s son and heir'],
 ['union','aragon','naples','Naples ruled by an illegitimate Aragonese branch'],
 ['union','denmark','sweden','Kalmar Union: Hans king of Sweden 1497–1501'],
-['marriage','burgundy','castile','Philip marries Juana of Castile, 1496'],
-['marriage','hre','castile','Margaret of Austria marries Prince Juan, 1497'],
+['marriage','low','castile','Philip marries Juana of Castile (1496)'],
+['marriage','hre','castile','Margaret of Austria marries Prince Juan (1497)'],
 ['marriage','england','aragon','Arthur and Catherine of Aragon, wed 1501'],
 ['marriage','england','scotland','Margaret Tudor to James IV, agreed 1502'],
-['marriage','portugal','castile','Manuel I marries Maria of Aragon, 1500'],
-['marriage','france','brittany','Louis XII marries Anne of Brittany, 1499'],
-['marriage','hre','milan','Maximilian marries Bianca Maria Sforza, 1494'],
-['marriage','lithuania','muscovy','Alexander marries Helena, Ivan III\'s daughter, 1495'],
-['marriage','papal','ferrara','Lucrezia Borgia marries Alfonso d\'Este, 1502'],
-['marriage','papal','navarre','Cesare Borgia marries Charlotte d\'Albret, 1499'],
-['marriage','savoy','hre','Philibert II marries Margaret of Austria, 1501'],
-['marriage','bohhun','france','Vladislaus II marries Anne de Foix-Candale, 1502'],
+['marriage','portugal','castile','Manuel I marries Maria of Aragon (1500)'],
+['marriage','france','brittany','Louis XII marries Anne of Brittany (1499)'],
+['marriage','hre','milan','Maximilian marries Bianca Maria Sforza (1494)'],
+['marriage','lithuania','muscovy','Alexander marries Helena, Ivan III\'s daughter (1495)'],
+['marriage','papal','ferrara','Lucrezia Borgia marries Alfonso d\'Este (1502)'],
+['marriage','papal','navarre','Cesare Borgia marries Charlotte d\'Albret (1499)'],
+['marriage','savoy','hre','Philibert II marries Margaret of Austria (1501)'],
+['marriage','hungary','france','Vladislaus II marries Anne de Foix-Candale (1502)'],
 ['marriage','moldavia','muscovy','Stephen\'s daughter married Ivan III\'s heir'],
 ['alliance','france','scotland','The Auld Alliance'],
-['alliance','france','venice','Treaty of Blois, 1499: partition of Milan'],
+['alliance','france','venice','Treaty of Blois (1499): partition of Milan'],
 ['alliance','france','papal','Louis XII backs Cesare Borgia\'s conquests'],
-['alliance','france','aragon','Treaty of Granada, 1500: secret partition of Naples'],
+['alliance','france','aragon','Treaty of Granada (1500): secret partition of Naples'],
 ['alliance','france','florence','Florence under French protection'],
-['alliance','england','castile','Treaty of Medina del Campo, 1489'],
+['alliance','england','castile','Treaty of Medina del Campo (1489)'],
 ['alliance','muscovy','crimea','Joint front against Lithuania and the Great Horde'],
-['alliance','hre','bohhun','Peace of Pressburg 1491: Habsburg succession claim'],
+['alliance','hre','hungary','Peace of Pressburg (1491): Habsburg succession claim'],
 ['alliance','moldavia','poland','Treaty of 1499 after the war of 1497'],
 ['vassal','teutonic','poland','Polish fief since 1466; homage refused from 1498'],
 ['vassal','wallachia','ottoman','Tributary of the Porte'],
@@ -104,58 +294,107 @@ const E=[
 ['vassal','crimea','ottoman','Ottoman vassal since 1475'],
 ['vassal','naples','papal','Kingdom held as a papal fief'],
 ['vassal','ferrara','papal','Ferrara held from the pope'],
-['vassal','milan','hre','Imperial fief; ducal title from Maximilian 1495'],
-['vassal','savoy','hre','Imperial principality']];
-const ns='http://www.w3.org/2000/svg',on={},sel={v:null},opt={mode:'none'};
+['vassal','milan','hre','Imperial fief; ducal title from Maximilian (1495)'],
+['vassal','savoy','hre','Imperial principality'],
+['vassal','bohemia','hre','Imperial elector']]},
+1600:{N:{
+castile:['Spain · Habsburg','Philip III; also Portugal, Naples, Sicily and Milan',1],
+portugal:['Portugal · Habsburg','Philip III, by the union of 1580',0],
+low:['Spanish Netherlands','Archdukes Albert and Isabella',0],
+dutch:['Dutch Republic','States General; Maurice of Nassau',0],
+england:['England · Tudor','Elizabeth I',1],
+scotland:['Scotland · Stuart','James VI',0],
+france:['France · Bourbon','Henry IV',1],
+navarre:['Navarre (Lower)','Henry IV',0],
+savoy:['Savoy','Charles Emmanuel I',0],
+milan:['Milan · Spanish','Governed for Philip III',0],
+naples:['Naples · Spanish','Viceroyalty of Philip III',0],
+florence:['Tuscany · Medici','Grand Duke Ferdinando I',0],
+papal:['Papacy','Clement VIII; Ferrara annexed 1598',1],
+venice:['Venice · republic','Doge Marino Grimani',0],
+hre:['Empire · Habsburg','Rudolf II; also Bohemia and Royal Hungary',1],
+denmark:['Denmark–Norway · Oldenburg','Christian IV',1],
+sweden:['Sweden · Vasa','Duke Charles, later Charles IX',0],
+poland:['Poland–Lithuania · Vasa','Sigismund III',1],
+teutonic:['Ducal Prussia · Hohenzollern','Albert Frederick',0],
+muscovy:['Muscovy · Godunov','Tsar Boris Godunov',1],
+crimea:['Crimea · Giray','Gazi II Giray',0],
+moldavia:['Moldavia · Movilă','Ieremia Movilă',0],
+wallachia:['Wallachia','Michael the Brave',0],
+ottoman:['Ottoman · Osman','Mehmed III',1]},
+E:[
+['union','castile','hre','Both Habsburg: Philip III and Rudolf II are cousins'],
+['union','castile','portugal','Iberian Union (1580)'],
+['union','castile','low','Isabella is Philip III\'s sister; sovereignty reverts to Spain'],
+['union','castile','milan','Ruled by Philip III'],
+['union','castile','naples','Ruled by Philip III'],
+['union','france','navarre','Henry IV is also king of Navarre'],
+['union','poland','sweden','Sigismund III, king of Sweden until deposed (1599)'],
+['marriage','france','florence','Henry IV marries Marie de\' Medici (1600)'],
+['marriage','scotland','denmark','James VI married Anne of Denmark (1589)'],
+['marriage','poland','hre','Sigismund III married Anna of Austria (1592)'],
+['marriage','savoy','castile','Charles Emmanuel I married Catherine Michelle, Philip II\'s daughter (1585)'],
+['marriage','muscovy','denmark','Xenia Godunova betrothed to Duke John of Denmark (1602)'],
+['alliance','england','dutch','Treaty of Nonsuch (1585)'],
+['alliance','france','dutch','Triple Alliance of Greenwich (1596)'],
+['alliance','france','england','Triple Alliance of Greenwich (1596)'],
+['alliance','england','scotland','Treaty of Berwick (1586); James VI is Elizabeth\'s heir'],
+['alliance','france','ottoman','Franco-Ottoman alliance; capitulations renewed 1604'],
+['alliance','papal','france','Clement VIII absolves Henry IV (1595)'],
+['alliance','papal','poland','Union of Brest (1596), backed by Sigismund III'],
+['alliance','venice','france','Venice the first to recognise Henry IV (1589)'],
+['vassal','teutonic','poland','Ducal Prussia a Polish fief since 1525'],
+['vassal','crimea','ottoman','Ottoman vassal'],
+['vassal','moldavia','ottoman','Tributary to the Porte'],
+['vassal','moldavia','poland','Ieremia Movilă under Polish protection'],
+['vassal','wallachia','hre','Michael the Brave accepts Rudolf II as suzerain (1598)']]}};
+const ns='http://www.w3.org/2000/svg',on={},st={yi:0,sel:null,mode:'none'};
 Object.keys(T).forEach(k=>on[k]=true);
 const SZ={none:'Default',deg:'Degree',btw:'Betweenness',clo:'Closeness'};
-function cent(){const ids=Object.keys(N),A={};ids.forEach(i=>A[i]=new Set());E.forEach(e=>{if(on[e[0]]&&e[1]!==e[2]){A[e[1]].add(e[2]);A[e[2]].add(e[1])}});
-const n=ids.length,deg={},btw={},clo={};ids.forEach(i=>{deg[i]=A[i].size;btw[i]=0;clo[i]=0});
-ids.forEach(s=>{const S=[],P={},sig={},d={};ids.forEach(v=>{P[v]=[];sig[v]=0;d[v]=-1});sig[s]=1;d[s]=0;const Q=[s];let h=0;
-while(h<Q.length){const v=Q[h++];S.push(v);A[v].forEach(w=>{if(d[w]<0){d[w]=d[v]+1;Q.push(w)}if(d[w]===d[v]+1){sig[w]+=sig[v];P[w].push(v)}})}
-let c=0;ids.forEach(t=>{if(t!==s&&d[t]>0)c+=1/d[t]});clo[s]=c/(n-1);
-const dl={};ids.forEach(v=>dl[v]=0);while(S.length){const w=S.pop();P[w].forEach(v=>{dl[v]+=sig[v]/sig[w]*(1+dl[w])});if(w!==s)btw[w]+=dl[w]}});
-ids.forEach(i=>btw[i]=btw[i]/((n-1)*(n-2)));return {deg,btw,clo}}
-const fmt=(k,v)=>k==='deg'?v:v.toFixed(2);
-function scaled(id,C,def){if(opt.mode==='none')return def;const v=C[opt.mode],M=Math.max(...Object.values(v));return M>0?4+11*Math.sqrt(v[id]/M):4}
-function isFilled(id,C,def){if(opt.mode==='none')return def;const v=C[opt.mode],M=Math.max(...Object.values(v));return M>0&&v[id]>=0.5*M}
-function topLine(C,name){const v=C[opt.mode];const top=Object.keys(N).sort((a,b)=>v[b]-v[a]).slice(0,5);return `<b>Highest ${SZ[opt.mode].toLowerCase()}</b>: `+top.map(i=>`${name(i)} (${fmt(opt.mode,v[i])})`).join(', ')}
-function metrics(C,s){return `Degree ${C.deg[s]} · Betweenness ${C.btw[s].toFixed(2)} · Closeness ${C.clo[s].toFixed(2)}`}
-
-const lg=document.getElementById('lg');
-Object.entries(T).forEach(([k,t])=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" checked style="margin:0"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${t.c}" stroke-width="${t.w}" stroke-dasharray="${t.d}" stroke-linecap="round"/></svg>${t.n}`;l.querySelector('input').onchange=e=>{on[k]=e.target.checked;draw()};lg.appendChild(l)});
+const lg=document.getElementById('lg'),lgItems={};
+Object.entries(T).forEach(([k,t])=>{const l=document.createElement('label');l.innerHTML=`<input type="checkbox" checked style="margin:0"><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${t.c}" stroke-width="${t.w}" stroke-dasharray="${t.d}" stroke-linecap="round"/></svg>${t.n}`;l.querySelector('input').onchange=e=>{on[k]=e.target.checked;draw()};lg.appendChild(l);lgItems[k]=l});
 lg.insertAdjacentHTML('beforeend','<span class="sep"></span>');
-const sl=document.createElement('label');sl.innerHTML='Size by <select>'+Object.entries(SZ).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')+'</select>';sl.querySelector('select').onchange=e=>{opt.mode=e.target.value;draw()};lg.appendChild(sl);
+const sl=document.createElement('label');sl.innerHTML='Size by <select>'+Object.entries(SZ).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')+'</select>';sl.querySelector('select').onchange=e=>{st.mode=e.target.value;draw()};lg.appendChild(sl);
+const yb=document.getElementById('years');Y.forEach((y,i)=>{const b=document.createElement('button');b.textContent=y;b.onclick=()=>{st.yi=i;document.getElementById('yr').value=i;st.sel=null;draw()};yb.appendChild(b)});
+document.getElementById('yr').oninput=e=>{st.yi=+e.target.value;st.sel=null;draw()};
 const eg=document.getElementById('edges'),ng=document.getElementById('nodes');
-const pc={};
-E.forEach(e=>{const key=[e[1],e[2]].sort().join();pc[key]=(pc[key]||0)+1;e.k=pc[key];const p=document.createElementNS(ns,'path');const t=T[e[0]];
+function cent(ids,A){const nb={};ids.forEach(i=>nb[i]=new Set());A.forEach(e=>{if(e[1]!==e[2]){nb[e[1]].add(e[2]);nb[e[2]].add(e[1])}});
+const n=ids.length,deg={},btw={},clo={};ids.forEach(i=>{deg[i]=nb[i].size;btw[i]=0;clo[i]=0});
+ids.forEach(s=>{const S=[],Pp={},sig={},d={};ids.forEach(v=>{Pp[v]=[];sig[v]=0;d[v]=-1});sig[s]=1;d[s]=0;const Q=[s];let h=0;
+while(h<Q.length){const v=Q[h++];S.push(v);nb[v].forEach(w=>{if(d[w]<0){d[w]=d[v]+1;Q.push(w)}if(d[w]===d[v]+1){sig[w]+=sig[v];Pp[w].push(v)}})}
+let c=0;ids.forEach(t=>{if(t!==s&&d[t]>0)c+=1/d[t]});clo[s]=n>1?c/(n-1):0;
+const dl={};ids.forEach(v=>dl[v]=0);while(S.length){const w=S.pop();Pp[w].forEach(v=>{dl[v]+=sig[v]/sig[w]*(1+dl[w])});if(w!==s)btw[w]+=dl[w]}});
+ids.forEach(i=>btw[i]=n>2?btw[i]/((n-1)*(n-2)):0);return {deg,btw,clo}}
+const fmt=(k,v)=>k==='deg'?v:v.toFixed(2);
+const short=l=>l.split(' · ')[0];
+function draw(){const y=Y[st.yi],snap=D[y],N=snap.N,ids=Object.keys(N);
+document.querySelectorAll('#years button').forEach((b,i)=>b.classList.toggle('on',i===st.yi));
+Object.entries(lgItems).forEach(([k,l])=>{l.style.display=snap.E.some(e=>e[0]===k)?'':'none'});
+const A=snap.E.filter(e=>on[e[0]]),C=cent(ids,A),s=st.sel;
+const R={};ids.forEach(id=>{let r=N[id][2]?10:6;if(st.mode!=='none'){const v=C[st.mode],M=Math.max(...ids.map(i=>v[i]));r=M>0?4+11*Math.sqrt(v[id]/M):4}R[id]=r});
+const fill=id=>{if(st.mode==='none')return N[id][2];const v=C[st.mode],M=Math.max(...ids.map(i=>v[i]));return M>0&&v[id]>=0.5*M};
+eg.innerHTML='';ng.innerHTML='';const pc={},nb=new Set();if(s)A.forEach(e=>{if(e[1]===s||e[2]===s){nb.add(e[1]);nb.add(e[2])}});
+A.forEach(e=>{const key=[e[1],e[2]].sort().join();pc[key]=(pc[key]||0)+1;const k=pc[key];
+const [x1,y1]=P[e[1]],[x2,y2]=P[e[2]];const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy);const off=k===1?8:k===2?-14:22;
+const mx=(x1+x2)/2-dy/L*off,my=(y1+y2)/2+dx/L*off,d1=Math.hypot(mx-x1,my-y1),d2=Math.hypot(x2-mx,y2-my);
+const r1=R[e[1]]+1,r2=R[e[2]]+2,sx=x1+(mx-x1)/d1*r1,sy=y1+(my-y1)/d1*r1,ex=x2-(x2-mx)/d2*r2,ey=y2-(y2-my)/d2*r2;
+const p=document.createElementNS(ns,'path'),t=T[e[0]];
+p.setAttribute('d',`M${sx.toFixed(1)} ${sy.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
 p.setAttribute('fill','none');p.setAttribute('stroke',t.c);p.setAttribute('stroke-width',t.w);p.setAttribute('stroke-linecap','round');
-if(t.d)p.setAttribute('stroke-dasharray',t.d);if(e[0]==='vassal')p.setAttribute('marker-end','url(#arrow)');
-p.setAttribute('class','e');const ti=document.createElementNS(ns,'title');ti.textContent=e[3];p.appendChild(ti);eg.appendChild(p);e.el=p});
-const nodeEls={};
-Object.entries(N).forEach(([id,[x,y,lab,ruler,maj,pos]])=>{const g=document.createElementNS(ns,'g');g.setAttribute('class','n');
-const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('stroke','var(--text)');c.setAttribute('stroke-width','1');g.appendChild(c);
-const t=document.createElementNS(ns,'text');t.textContent=lab;g.appendChild(t);
-g.onclick=()=>{sel.v=sel.v===id?null:id;draw()};ng.appendChild(g);nodeEls[id]={g,c,t,x,y,big:maj,pos}});
-function placeLabel(n,r){let tx=n.x,ty=n.y,a='middle';
-if(n.pos==='r'){tx=n.x+r+5;ty=n.y+4;a='start'}else if(n.pos==='l'){tx=n.x-r-5;ty=n.y+4;a='end'}else if(n.pos==='t'){ty=n.y-r-6}else{ty=n.y+r+14}
-if(tx>600&&a==='middle'){a='end';tx=n.x+r}
-n.t.setAttribute('x',tx.toFixed(1));n.t.setAttribute('y',ty.toFixed(1));n.t.setAttribute('text-anchor',a)}
-function draw(){const s=sel.v,C=cent(),R={};Object.keys(N).forEach(id=>R[id]=scaled(id,C,nodeEls[id].big?10:6));
-Object.entries(nodeEls).forEach(([id,n])=>{n.c.setAttribute('r',R[id].toFixed(1));n.c.setAttribute('fill',isFilled(id,C,n.big)?'var(--node-fill)':'var(--minor-fill)');placeLabel(n,R[id])});
-const nb=new Set();
-E.forEach(e=>{const vis=on[e[0]];const hit=!s||e[1]===s||e[2]===s;if(vis&&hit&&s){nb.add(e[1]);nb.add(e[2])}
-const a=nodeEls[e[1]],b=nodeEls[e[2]];const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);const off=(e.k===1?8:-14);
-const mx=(a.x+b.x)/2-dy/L*off,my=(a.y+b.y)/2+dx/L*off;const d1=Math.hypot(mx-a.x,my-a.y),d2=Math.hypot(b.x-mx,b.y-my);
-const r1=R[e[1]]+1,r2=R[e[2]]+2;
-const sx=a.x+(mx-a.x)/d1*r1,sy=a.y+(my-a.y)/d1*r1,ex=b.x-(b.x-mx)/d2*r2,ey=b.y-(b.y-my)/d2*r2;
-e.el.setAttribute('d',`M${sx.toFixed(1)} ${sy.toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
-e.el.style.display=vis?'':'none';e.el.style.opacity=hit?1:0.07});
-Object.entries(nodeEls).forEach(([id,n])=>{n.g.style.opacity=!s||nb.has(id)||id===s?1:0.25});
+if(t.d)p.setAttribute('stroke-dasharray',t.d);if(e[0]==='vassal'||e[0]==='obedience')p.setAttribute('marker-end','url(#arrow)');
+p.setAttribute('class','e');p.style.opacity=!s||e[1]===s||e[2]===s?1:0.07;
+const ti=document.createElementNS(ns,'title');ti.textContent=e[3];p.appendChild(ti);eg.appendChild(p)});
+ids.forEach(id=>{const [x,yy,pos]=P[id],r=R[id],lab=N[id][0];const g=document.createElementNS(ns,'g');g.setAttribute('class','n');
+const c=document.createElementNS(ns,'circle');c.setAttribute('cx',x);c.setAttribute('cy',yy);c.setAttribute('r',r.toFixed(1));c.setAttribute('fill',fill(id)?'var(--node-fill)':'var(--minor-fill)');c.setAttribute('stroke','var(--text)');c.setAttribute('stroke-width','1');g.appendChild(c);
+const t=document.createElementNS(ns,'text');let tx=x,ty=yy,a='middle';
+if(pos==='r'){tx=x+r+5;ty=yy+4;a='start'}else if(pos==='l'){tx=x-r-5;ty=yy+4;a='end'}else if(pos==='t'){ty=yy-r-6}else{ty=yy+r+14}
+if(a==='middle'&&x>660){a='end';tx=x+r}if(a==='middle'&&x<70){a='start';tx=x-r}
+t.setAttribute('x',tx.toFixed(1));t.setAttribute('y',ty.toFixed(1));t.setAttribute('text-anchor',a);t.textContent=lab;g.appendChild(t);
+g.style.opacity=!s||nb.has(id)||id===s?1:0.25;g.onclick=()=>{st.sel=st.sel===id?null:id;draw()};ng.appendChild(g)});
 const info=document.getElementById('info');
-if(!s){info.innerHTML=opt.mode==='none'?'Select a state to see its ties. Larger circles are the major powers; use "Size by" to scale states by a centrality measure instead.':topLine(C,i=>N[i][2].split(' · ')[0]);return}
-const n=N[s];const rows=E.filter(e=>on[e[0]]&&(e[1]===s||e[2]===s)).map(e=>{const o=e[1]===s?e[2]:e[1];return `<span style="color:${T[e[0]].c}">●</span> ${N[o][2].split(' · ')[0]}: ${e[3]}`});
-info.innerHTML=`<b>${n[2]}</b> — ${n[3]}. ${metrics(C,s)}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
+if(!s){info.innerHTML=st.mode==='none'?`<b>c. ${y}</b>: ${ids.length} states, ${A.length} ties. Select a state to see its ties. Filled circles are the major powers.`:`<b>c. ${y}, highest ${SZ[st.mode].toLowerCase()}</b>: `+ids.slice().sort((a,b)=>C[st.mode][b]-C[st.mode][a]).slice(0,5).map(i=>`${short(N[i][0])} (${fmt(st.mode,C[st.mode][i])})`).join(', ');return}
+const n=N[s],rows=A.filter(e=>e[1]===s||e[2]===s).map(e=>{const o=e[1]===s?e[2]:e[1];return `<span style="color:${T[e[0]].c}">●</span> ${short(N[o][0])}: ${e[3]}`});
+info.innerHTML=`<b>${n[0]}</b> — ${n[1]}. Degree ${C.deg[s]} · Betweenness ${C.btw[s].toFixed(2)} · Closeness ${C.clo[s].toFixed(2)}<br>${rows.join('<br>')||'No ties shown with current filters.'}`}
 draw();
 </script>
 </body>
